@@ -5,8 +5,6 @@ node_modules/
 *.log
 
 # Test installation folders
-.a11y-skills/
-.a11y-mcp/
 .github/skills/
 
 # Package tarballs
