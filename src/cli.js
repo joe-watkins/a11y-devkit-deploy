@@ -149,7 +149,7 @@ async function run() {
       skillsSpinner.fail("No skills directory found in repo.");
     } else {
       const skillTargets = scope === "local"
-        ? [idePaths.local.skillsDir]
+        ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
         : ideSelection.map((ide) => idePaths[ide].skillsDir);
 
       for (const target of skillTargets) {
