@@ -72,12 +72,14 @@ function getIdePaths(projectRoot, platformInfo = getPlatform(), ideSkillsPaths =
       name: "Local Project",
       skillsDir: path.join(projectRoot, skillsPaths.local),
       repoDir: path.join(projectRoot, ".a11y-skills"),
-      mcpRepoDir: path.join(projectRoot, ".a11y-mcp")
+      mcpRepoDir: path.join(projectRoot, ".a11y-skills", "mcp"),
+      skillsRepoDir: path.join(projectRoot, ".a11y-skills", "skills")
     },
     global: {
       name: "Global User",
       repoDir: path.join(home, ".a11y-skills"),
-      mcpRepoDir: path.join(home, ".a11y-mcp")
+      mcpRepoDir: path.join(home, ".a11y-skills", "mcp"),
+      skillsRepoDir: path.join(home, ".a11y-skills", "skills")
     }
   };
 }

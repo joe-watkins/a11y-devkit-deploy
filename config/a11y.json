@@ -31,6 +31,7 @@
     }
   ],
   "skillsSearchPaths": [
+    ".",
     "skills",
     ".github/skills",
     ".codex/skills"

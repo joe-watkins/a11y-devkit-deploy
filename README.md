@@ -44,28 +44,35 @@ Edit `config/a11y.json` to customize the deployment:
 - `skillsSearchPaths` - Directories to search for skills in the cloned repo
 - `ideSkillsPaths` - IDE-specific skills directories (configurable per IDE)
 - `mcpServers` - MCP server definitions with placeholders:
-  - `{repoDir}` - Path to the main a11y-skills repo
-  - `{mcpRepoDir}` - Path to the MCP repos directory
+  - `{repoDir}` - Path to the `.a11y-skills` root directory
+  - `{mcpRepoDir}` - Path to the `.a11y-skills/mcp` directory
 
 ## Directory Structure
 
 ### Local Install (Project-Specific)
 ```
 your-project/
-├── .github/skills/          # Skills copied here
-├── .a11y-skills/            # Main skills repo cloned here
-└── .a11y-mcp/               # MCP repos cloned here
-    ├── wcag-mcp/
-    ├── aria-mcp/
-    ├── magentaa11y-mcp/
-    ├── a11y-personas-mcp/
-    └── accessibility-issues-template-mcp/
+├── .a11y-skills/            # Single root folder for all a11y content
+│   ├── README.md            # Auto-generated documentation
+│   ├── skills/              # Main a11y-skills repo
+│   └── mcp/                 # MCP server repos
+│       ├── wcag-mcp/
+│       ├── aria-mcp/
+│       ├── magentaa11y-mcp/
+│       ├── a11y-personas-mcp/
+│       └── a11y-issues-template-mcp/
+├── .claude/skills/          # Skills copied to Claude Code (if selected)
+├── .cursor/skills/          # Skills copied to Cursor (if selected)
+├── .codex/skills/           # Skills copied to Codex (if selected)
+└── .github/skills/          # Skills copied here for version control
 ```
 
 ### Global Install (User-Wide)
 ```
-~/.a11y-skills/              # Main skills repo
-~/.a11y-mcp/                 # MCP repos
+~/.a11y-skills/              # Single root folder for all a11y content
+│   ├── README.md            # Auto-generated documentation
+│   ├── skills/              # Main a11y-skills repo
+│   └── mcp/                 # MCP server repos
 ~/.claude/skills/            # Claude Code skills
 ~/.cursor/skills/            # Cursor skills
 ~/.codex/skills/             # Codex skills

@@ -5,7 +5,7 @@ import prompts from "prompts";
 
 import { header, info, warn, success, startSpinner, formatPath } from "./ui.js";
 import { getPlatform, getIdePaths } from "./paths.js";
-import { ensureRepo, buildMcp } from "./installers/repo.js";
+import { ensureRepo, buildMcp, createReadme } from "./installers/repo.js";
 import { findSkillsDir, copySkills } from "./installers/skills.js";
 import { resolveServers, installMcpConfig } from "./installers/mcp.js";
 
@@ -113,10 +113,11 @@ async function run() {
   info(`Install scope: ${scope === "local" ? "Local" : "Global"}`);
   info(`Repo path: ${formatPath(scopePaths.repoDir)}`);
 
+  // Clone skills repo into the skills subfolder
   const repoSpinner = startSpinner("Syncing a11y-skills repo...");
   const repoResult = await ensureRepo({
     url: config.repo.url,
-    dir: scopePaths.repoDir
+    dir: scopePaths.skillsRepoDir
   });
   repoSpinner.succeed(`Repo ${repoResult.action}: ${formatPath(repoResult.dir)}`);
 
@@ -142,9 +143,12 @@ async function run() {
     mcpSpinner.succeed(`MCP repos synced to ${formatPath(scopePaths.mcpRepoDir)}`);
   }
 
+  // Create README in the main .a11y-skills directory
+  await createReadme(scopePaths.repoDir);
+
   if (installSkills) {
-    const skillsSpinner = startSpinner("Installing skills...");
-    const sourceDir = await findSkillsDir(scopePaths.repoDir, config.skillsSearchPaths);
+    const skillsSpinner = startSpinner("Installing skills to IDE folders...");
+    const sourceDir = await findSkillsDir(scopePaths.skillsRepoDir, config.skillsSearchPaths);
     if (!sourceDir) {
       skillsSpinner.fail("No skills directory found in repo.");
     } else {
@@ -156,10 +160,10 @@ async function run() {
         await copySkills(sourceDir, target);
       }
 
-      skillsSpinner.succeed(`Skills installed to ${skillTargets.length} location(s).`);
+      skillsSpinner.succeed(`Skills installed to ${skillTargets.length} IDE location(s).`);
     }
   } else {
-    warn("Skipping skills install.");
+    warn("Skipping skills install to IDE folders.");
   }
 
   const serverDefs = resolveServers(config.mcpServers, scopePaths.repoDir, scopePaths.mcpRepoDir);

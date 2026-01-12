@@ -4,8 +4,13 @@ node_modules/
 .env
 *.log
 
-# Test installation folders
+# Generated installation folders
+.a11y-skills/
 .github/skills/
+.claude/skills/
+.cursor/skills/
+.codex/skills/
+.vscode/skills/
 
 # Package tarballs
 *.tgz
