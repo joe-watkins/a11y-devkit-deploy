@@ -1,5 +1,5 @@
-const fs = require("fs/promises");
-const path = require("path");
+import fs from "fs/promises";
+import path from "path";
 
 async function pathExists(target) {
   try {
@@ -25,7 +25,7 @@ async function copySkills(sourceDir, targetDir) {
   await fs.cp(sourceDir, targetDir, { recursive: true, force: true });
 }
 
-module.exports = {
+export {
   findSkillsDir,
   copySkills
 };

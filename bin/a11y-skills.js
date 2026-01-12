@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { run } = require("../src/cli");
+import { run } from "../src/cli.js";
 
 run().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);

@@ -1,12 +1,16 @@
-const fs = require("fs/promises");
-const path = require("path");
-const prompts = require("prompts");
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import prompts from "prompts";
 
-const { header, info, warn, success, startSpinner, formatPath } = require("./ui");
-const { getPlatform, getIdePaths } = require("./paths");
-const { ensureRepo } = require("./installers/repo");
-const { findSkillsDir, copySkills } = require("./installers/skills");
-const { resolveServers, installMcpConfig } = require("./installers/mcp");
+import { header, info, warn, success, startSpinner, formatPath } from "./ui.js";
+import { getPlatform, getIdePaths } from "./paths.js";
+import { ensureRepo } from "./installers/repo.js";
+import { findSkillsDir, copySkills } from "./installers/skills.js";
+import { resolveServers, installMcpConfig } from "./installers/mcp.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function loadConfig() {
   const configPath = path.join(__dirname, "..", "config", "a11y.json");
@@ -160,6 +164,6 @@ async function run() {
   info("You can re-run this CLI any time to update the repo and configs.");
 }
 
-module.exports = {
+export {
   run
 };

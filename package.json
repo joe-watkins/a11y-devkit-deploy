@@ -1,9 +1,9 @@
 {
   "name": "a11y-skills-deploy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI to deploy a11y skills and MCP servers across IDEs",
   "license": "MIT",
-  "type": "commonjs",
+  "type": "module",
   "main": "src/cli.js",
   "bin": {
     "a11y-skills": "bin/a11y-skills.js"

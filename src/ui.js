@@ -1,6 +1,6 @@
-const boxen = require("boxen");
-const pc = require("picocolors");
-const ora = require("ora");
+import boxen from "boxen";
+import pc from "picocolors";
+import ora from "ora";
 
 const bullets = {
   info: pc.cyan("i"),
@@ -46,7 +46,7 @@ function formatPath(value) {
   return pc.dim(value);
 }
 
-module.exports = {
+export {
   header,
   info,
   warn,

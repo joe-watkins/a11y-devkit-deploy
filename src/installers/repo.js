@@ -1,6 +1,6 @@
-const fs = require("fs/promises");
-const path = require("path");
-const { spawn } = require("child_process");
+import fs from "fs/promises";
+import path from "path";
+import { spawn } from "child_process";
 
 async function pathExists(target) {
   try {
@@ -43,6 +43,6 @@ async function ensureRepo({ url, dir }) {
   return { action: "cloned", dir };
 }
 
-module.exports = {
+export {
   ensureRepo
 };

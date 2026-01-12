@@ -1,5 +1,5 @@
-const os = require("os");
-const path = require("path");
+import os from "os";
+import path from "path";
 
 function getPlatform() {
   const platform = os.platform();
@@ -74,7 +74,7 @@ function getIdePaths(projectRoot, platformInfo = getPlatform(), ideSkillsPaths =
   };
 }
 
-module.exports = {
+export {
   getPlatform,
   getAppSupportDir,
   getIdePaths

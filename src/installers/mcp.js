@@ -1,5 +1,5 @@
-const fs = require("fs/promises");
-const path = require("path");
+import fs from "fs/promises";
+import path from "path";
 
 async function pathExists(target) {
   try {
@@ -63,7 +63,7 @@ async function installMcpConfig(configPath, servers) {
   await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
 }
 
-module.exports = {
+export {
   resolveServers,
   installMcpConfig
 };
