@@ -40,7 +40,7 @@
     "claude": ".claude/skills",
     "cursor": ".cursor/skills",
     "codex": ".codex/skills",
-    "vscode": ".vscode/skills",
+    "vscode": ".github/skills",
     "local": ".github/skills"
   },
   "mcpServers": [

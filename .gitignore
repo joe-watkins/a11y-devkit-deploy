@@ -11,6 +11,7 @@ node_modules/
 .cursor/skills/
 .codex/skills/
 .vscode/skills/
+.github/skills/
 
 # Package tarballs
 *.tgz
