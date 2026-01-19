@@ -1,6 +1,6 @@
 {
   "name": "a11y-devkit-deploy",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "description": "CLI to deploy a11y skills and MCP servers across IDEs",
   "license": "MIT",
   "type": "module",
@@ -28,12 +28,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/joe-watkins/a11y-devkit.git"
+    "url": "https://github.com/joe-watkins/a11y-devkit-deploy.git"
   },
   "bugs": {
-    "url": "https://github.com/joe-watkins/a11y-devkit/issues"
+    "url": "https://github.com/joe-watkins/a11y-devkit-deploy/issues"
   },
-  "homepage": "https://github.com/joe-watkins/a11y-devkit#readme",
+  "homepage": "https://github.com/joe-watkins/a11y-devkit-deploy#readme",
   "author": "Joe Watkins",
   "engines": {
     "node": ">=18"
