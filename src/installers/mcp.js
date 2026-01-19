@@ -33,10 +33,17 @@ function mergeServers(existing, incoming, serverKey = "servers") {
   const merged = { ...existing, [serverKey]: { ...existingServers } };
 
   for (const server of incoming) {
-    merged[serverKey][server.name] = {
+    const serverConfig = {
       command: server.command,
       args: server.args || []
     };
+
+    // Include type if provided
+    if (server.type) {
+      serverConfig.type = server.type;
+    }
+
+    merged[serverKey][server.name] = serverConfig;
   }
 
   return merged;

@@ -4,9 +4,11 @@ import { fileURLToPath } from "url";
 import prompts from "prompts";
 
 import { header, info, warn, success, startSpinner, formatPath } from "./ui.js";
-import { getPlatform, getIdePaths, getTempDir } from "./paths.js";
+import { getPlatform, getIdePaths, getTempDir, getMcpRepoDir } from "./paths.js";
 import { installSkillsFromNpm, cleanupTemp } from "./installers/skills.js";
 import { installMcpConfig } from "./installers/mcp.js";
+import { getGitMcpPrompts, parseArgsString } from "./prompts/git-mcp.js";
+import { installGitMcp } from "./installers/git-mcp.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +34,7 @@ function parseArgs(argv) {
       : args.has("--local")
         ? "local"
         : null,
+    gitMcp: args.has("--git-mcp"),
   };
 }
 
@@ -52,9 +55,17 @@ async function run() {
 
   header(
     `A11y Devkit Deploy v${pkg.version}`,
-    "Install skills + MCP servers across IDEs",
+    args.gitMcp
+      ? "Install MCP server from Git repository"
+      : "Install skills + MCP servers across IDEs",
   );
   info(`Detected OS: ${formatOs(platformInfo)}`);
+
+  // Branch to Git MCP installation flow
+  if (args.gitMcp) {
+    await runGitMcpInstallation(projectRoot, platformInfo, config, idePaths, args);
+    return;
+  }
 
   console.log("\nSkills to install:");
   config.skills.forEach((skill) => {
@@ -237,6 +248,200 @@ async function run() {
   console.log("");
   info("You can re-run this CLI any time to update skills and configs.");
   info("Documentation: https://github.com/joe-watkins/a11y-devkit#readme");
+}
+
+async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths, args) {
+  // Check if --yes flag is used with --git-mcp
+  if (args.autoYes) {
+    warn("--yes flag not supported for Git MCP installation");
+    info("Interactive prompts required for Git MCP configuration");
+    process.exit(1);
+  }
+
+  console.log("\n");
+  info("Installing MCP server from Git repository");
+  console.log("");
+
+  // Collect Git MCP information
+  const gitMcpPrompts = getGitMcpPrompts();
+  const mcpInfo = await prompts(gitMcpPrompts, {
+    onCancel: () => {
+      warn("Git MCP installation cancelled.");
+      process.exit(0);
+    },
+  });
+
+  // Parse args string into array
+  const argsArray = parseArgsString(mcpInfo.args);
+
+  // Prompt for Repo Clone Scope (where to clone the Git repository)
+  const repoScopeResponse = await prompts(
+    {
+      type: "select",
+      name: "repoScope",
+      message: "Where to clone the Git repository?",
+      choices: [
+        {
+          title: `Local to this project (${formatPath(projectRoot)})`,
+          value: "local",
+          description: "Clone to .a11y-devkit/mcp-repos/ in project",
+        },
+        {
+          title: "Global for this user",
+          value: "global",
+          description: "Clone to user-level app support directory",
+        },
+      ],
+      initial: 0,
+    },
+    {
+      onCancel: () => {
+        warn("Git MCP installation cancelled.");
+        process.exit(0);
+      },
+    },
+  );
+
+  // Prompt for MCP Config Scope (where to write MCP configurations)
+  const mcpScopeResponse = await prompts(
+    {
+      type: "select",
+      name: "mcpScope",
+      message: "Where to write MCP configurations?",
+      choices: [
+        {
+          title: `Local to this project (${formatPath(projectRoot)})`,
+          value: "local",
+          description: "Write to project-level IDE config folders",
+        },
+        {
+          title: "Global for this user",
+          value: "global",
+          description: "Write to user-level IDE config folders",
+        },
+      ],
+      initial: 0,
+    },
+    {
+      onCancel: () => {
+        warn("Git MCP installation cancelled.");
+        process.exit(0);
+      },
+    },
+  );
+
+  // Prompt for IDE selection
+  const ideChoices = config.ides.map((ide) => ({
+    title: ide.displayName,
+    value: ide.id,
+  }));
+
+  const ideResponse = await prompts(
+    {
+      type: "multiselect",
+      name: "ides",
+      message: "Configure MCP for which IDEs?",
+      choices: ideChoices,
+      initial: ideChoices.map((_, index) => index),
+    },
+    {
+      onCancel: () => {
+        warn("Git MCP installation cancelled.");
+        process.exit(0);
+      },
+    },
+  );
+
+  const ideSelection = ideResponse.ides || [];
+
+  if (!ideSelection.length) {
+    warn("No IDEs selected. MCP installation requires at least one IDE.");
+    process.exit(1);
+  }
+
+  const repoScope = repoScopeResponse.repoScope;
+  const mcpScope = mcpScopeResponse.mcpScope;
+
+  info(`Repository clone scope: ${repoScope === "local" ? "Local" : "Global"}`);
+  info(`MCP config scope: ${mcpScope === "local" ? "Local" : "Global"}`);
+
+  // Install Git MCP
+  const gitSpinner = startSpinner("Cloning Git repository...");
+
+  let mcpServer;
+  try {
+    mcpServer = await installGitMcp(
+      {
+        name: mcpInfo.name,
+        repoUrl: mcpInfo.repoUrl,
+        type: mcpInfo.type,
+        command: mcpInfo.command,
+        args: argsArray,
+        buildCommand: mcpInfo.buildCommand,
+      },
+      repoScope,
+      projectRoot,
+      platformInfo,
+      getMcpRepoDir,
+    );
+    gitSpinner.succeed(`Repository cloned to ${mcpServer.repoPath}`);
+  } catch (error) {
+    gitSpinner.fail(`Failed to install Git MCP: ${error.message}`);
+    process.exit(1);
+  }
+
+  // Install MCP configurations to selected IDEs
+  const mcpConfigSpinner = startSpinner("Updating MCP configurations...");
+
+  const mcpConfigPaths =
+    mcpScope === "local"
+      ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
+      : ideSelection.map((ide) => idePaths[ide].mcpConfig);
+
+  // Construct the MCP server configuration with absolute path
+  const mcpServerConfig = {
+    name: mcpServer.name,
+    type: mcpServer.type,
+    command: mcpServer.command,
+    args: mcpServer.args.length > 0 ? mcpServer.args : undefined,
+  };
+
+  // If args are provided, prepend the repo path to the first argument
+  // Otherwise, use the repo path as the only argument
+  if (mcpServerConfig.args && mcpServerConfig.args.length > 0) {
+    // Assume first arg is a relative path within the repo
+    mcpServerConfig.args = [
+      path.join(mcpServer.repoPath, mcpServerConfig.args[0]),
+      ...mcpServerConfig.args.slice(1),
+    ];
+  } else {
+    // No args provided - this might need to be handled differently
+    // For now, don't add any args
+    delete mcpServerConfig.args;
+  }
+
+  for (let i = 0; i < ideSelection.length; i++) {
+    const ide = ideSelection[i];
+    await installMcpConfig(
+      mcpConfigPaths[i],
+      [mcpServerConfig],
+      idePaths[ide].mcpServerKey,
+    );
+  }
+
+  mcpConfigSpinner.succeed(
+    `MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`,
+  );
+
+  // Display success message
+  success("Git MCP installation complete!");
+  info(`Repository location: ${mcpServer.repoPath}`);
+  info(`MCP server '${mcpServer.name}' configured in ${ideSelection.length} IDE(s)`);
+  console.log("");
+  success("Next Steps:");
+  info("Restart your IDE to load the new MCP server");
+  info(`Repository cloned to: ${mcpServer.repoPath}`);
+  info("You can manually edit the MCP configuration files if needed");
 }
 
 export { run };
