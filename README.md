@@ -1,8 +1,8 @@
 # A11y Devkit Deploy
 
-A **fully config-driven**, cross-platform CLI for deploying accessibility skills and MCP servers across Claude Code, Cursor, Codex, and VSCode.
+A **fully config-driven**, cross-platform CLI for deploying accessibility skills and MCP servers across multiple IDEs: Claude Code, Cursor, Codex, VSCode, Windsurf, and Factory.
 
-**Add new skills or MCP servers without writing code** - just edit the JSON config and re-run.
+**Add new skills, MCP servers, or entire IDEs without writing code** - just edit the JSON config and re-run.
 
 ## Install
 
@@ -27,8 +27,8 @@ a11y-devkit-deploy
 
 Once installation completes, you'll find a comprehensive usage guide in your IDE's skills directory:
 
-- **Local install**: `.claude/skills/README.md` (or `.cursor/skills/`, `.codex/skills/` depending on your IDE)
-- **Global install**: `~/.claude/skills/README.md` (or your IDE's global skills directory)
+- **Local install**: `.claude/skills/a11y/a11y-devkit-README.md` (or `.cursor/skills/a11y/`, `.codex/skills/a11y/` depending on your IDE)
+- **Global install**: `~/.claude/skills/a11y/a11y-devkit-README.md` (or your IDE's global skills directory)
 
 ### What's in the Guide
 
@@ -42,7 +42,7 @@ The bundled README includes:
 
 ### Preview the Guide
 
-You can preview the guide here: [templates/skills-README.md](templates/skills-README.md)
+You can preview the guide here: [templates/deploy-README.md](templates/deploy-README.md)
 
 ### Next Steps
 
@@ -75,7 +75,31 @@ This CLI automates the setup of accessibility tooling by:
      - **a11y-personas** - Accessibility personas for diverse user needs
      - **arc-issues** - Format AxeCore violations into standardized issue templates
 
-**Fully customizable** - add/remove skills or MCP servers by editing the config file.
+**Fully customizable** - add/remove skills, MCP servers, or entire IDEs by editing the config file.
+
+## Why This Tool?
+
+**Zero Hardcoded Values** - Every aspect of the tool is driven by `config/a11y.json`:
+- IDE paths and configuration files
+- Skills to install
+- MCP servers to configure
+- Even the IDE list itself
+
+**Adding Support for a New IDE** takes just 5 lines of JSON:
+```json
+{
+  "id": "new-ide",
+  "displayName": "New IDE",
+  "mcpServerKey": "servers",
+  "skillsFolder": ".new-ide/skills",
+  "mcpConfigFile": ".new-ide/mcp.json"
+}
+```
+
+**Safe by Default** - Won't overwrite your existing:
+- Custom MCP servers in your IDE configs
+- Other skills in your skills directories
+- Creates backups if it encounters JSON parsing errors
 
 ### Skills Installed (Default)
 
@@ -118,9 +142,9 @@ The generated MCP config looks like this:
 
 ## Configuration
 
-The entire tool is **fully config-driven**. Edit `config/a11y.json` to customize everything without touching code:
+The entire tool is **fully config-driven**. Edit `config/a11y.json` to customize everything without touching code.
 
-### Example: Adding a New Skill
+### Adding a New Skill
 
 Simply add an object to the `skills` array with a `name` (npm package) and `description`:
 
@@ -139,7 +163,7 @@ Simply add an object to the `skills` array with a `name` (npm package) and `desc
 }
 ```
 
-### Example: Adding a New MCP Server
+### Adding a New MCP Server
 
 Add an object to the `mcpServers` array with name, description, command, and args:
 
@@ -162,40 +186,96 @@ Add an object to the `mcpServers` array with name, description, command, and arg
 }
 ```
 
+### Adding a New IDE
+
+Add an object to the `ides` array with the IDE's configuration:
+
+```json
+{
+  "ides": [
+    {
+      "id": "windsurf",
+      "displayName": "Windsurf",
+      "mcpServerKey": "servers",
+      "skillsFolder": ".codeium/windsurf/skills",
+      "mcpConfigFile": ".codeium/windsurf/mcp_config.json"
+    }
+  ]
+}
+```
+
+**IDE Configuration Properties:**
+- `id` - Unique identifier for the IDE
+- `displayName` - Human-readable name shown in prompts
+- `mcpServerKey` - MCP config key name (`"servers"` or `"mcpServers"`)
+- `skillsFolder` - Path to skills directory (relative to home/project root)
+- `mcpConfigFile` - Path to MCP config file (relative to home/project root)
+
 ### Config Structure
 
+- `skillsFolder` - Subfolder name to bundle skills under (e.g., "a11y")
+- `readmeTemplate` - README template file to copy into skills directories
 - `skills` - Array of skill objects with `name` (npm package) and `description`
-- `ideSkillsPaths` - IDE-specific skills directories (configurable per IDE)
-- `ideMcpPaths` - IDE-specific MCP config file paths
+- `ides` - Array of IDE configuration objects
 - `mcpServers` - MCP server definitions with name, description, command, and args
 
 All changes take effect immediately - just re-run the CLI to deploy your updated config.
+
+### Safe Merging
+
+The CLI **safely merges** with existing configurations:
+- **MCP configs** - Adds/updates only the specified servers, preserves others
+- **Skills** - Installs only the configured skills, preserves other skills in the directory
+- **Backups** - Creates `.bak` files if JSON parsing fails
 
 ## Directory Structure
 
 ### Local Install (Project-Specific)
 ```
 your-project/
-├── .claude/skills/          # Skills copied to Claude Code (if selected)
-├── .cursor/skills/          # Skills copied to Cursor (if selected)
-├── .codex/skills/           # Skills copied to Codex (if selected)
-└── .github/skills/          # Skills copied here for version control
+├── .claude/
+│   ├── mcp.json            # Claude Code MCP config
+│   └── skills/             # Claude Code skills
+├── .cursor/
+│   ├── mcp.json            # Cursor MCP config
+│   └── skills/             # Cursor skills
+├── .codex/
+│   ├── mcp.json            # Codex MCP config
+│   └── skills/             # Codex skills
+├── .github/
+│   ├── mcp.json            # VSCode MCP config
+│   └── skills/             # VSCode skills
+├── .codeium/windsurf/
+│   ├── mcp_config.json     # Windsurf MCP config
+│   └── skills/             # Windsurf skills
+└── .factory/
+    ├── mcp.json            # Factory MCP config
+    └── skills/             # Factory skills
 ```
 
 ### Global Install (User-Wide)
 ```
-~/.claude/skills/            # Claude Code skills
-~/.cursor/skills/            # Cursor skills
-~/.codex/skills/             # Codex skills
-~/.vscode/skills/            # VSCode skills
+~/.claude/
+  ├── mcp.json              # Claude Code global MCP config
+  └── skills/               # Claude Code global skills
+~/.cursor/
+  ├── mcp.json              # Cursor global MCP config
+  └── skills/               # Cursor global skills
+~/.codex/
+  ├── mcp.json              # Codex global MCP config
+  └── skills/               # Codex global skills
+~/.github/
+  ├── mcp.json              # VSCode global MCP config
+  └── skills/               # VSCode global skills
+~/.codeium/windsurf/
+  ├── mcp_config.json       # Windsurf global MCP config
+  └── skills/               # Windsurf global skills
+~/.factory/
+  ├── mcp.json              # Factory global MCP config
+  └── skills/               # Factory global skills
 ```
 
-### MCP Configuration Locations
-
-MCP configurations are written to each IDE's OS-specific config path:
-- **macOS**: `~/Library/Application Support/{IDE}/mcp.json`
-- **Windows**: `%APPDATA%\{IDE}\mcp.json`
-- **Linux**: `~/.config/{IDE}/mcp.json`
+**Note:** Paths are fully customizable per IDE in `config/a11y.json`
 
 ## MCP Servers Included (Default)
 
@@ -208,3 +288,63 @@ MCP configurations are written to each IDE's OS-specific config path:
 | magentaa11y | `magentaa11y-mcp` | Component accessibility acceptance criteria |
 | a11y-personas | `a11y-personas-mcp` | Accessibility personas for diverse users |
 | arc-issues | `arc-issues-mcp` | AxeCore violation formatting |
+
+## Complete Config Example
+
+Here's what a complete `config/a11y.json` looks like:
+
+```json
+{
+  "skillsFolder": "a11y",
+  "readmeTemplate": "deploy-README.md",
+  "skills": [
+    {
+      "name": "a11y-base-web-skill",
+      "description": "Core accessibility testing utilities"
+    },
+    {
+      "name": "a11y-tester-skill",
+      "description": "Run accessibility tests"
+    }
+  ],
+  "ides": [
+    {
+      "id": "claude",
+      "displayName": "Claude Code",
+      "mcpServerKey": "servers",
+      "skillsFolder": ".claude/skills",
+      "mcpConfigFile": ".claude/mcp.json"
+    },
+    {
+      "id": "cursor",
+      "displayName": "Cursor",
+      "mcpServerKey": "mcpServers",
+      "skillsFolder": ".cursor/skills",
+      "mcpConfigFile": ".cursor/mcp.json"
+    },
+    {
+      "id": "windsurf",
+      "displayName": "Windsurf",
+      "mcpServerKey": "servers",
+      "skillsFolder": ".codeium/windsurf/skills",
+      "mcpConfigFile": ".codeium/windsurf/mcp_config.json"
+    }
+  ],
+  "mcpServers": [
+    {
+      "name": "wcag",
+      "description": "WCAG guidelines reference",
+      "command": "npx",
+      "args": ["-y", "wcag-mcp"]
+    },
+    {
+      "name": "aria",
+      "description": "ARIA specification reference",
+      "command": "npx",
+      "args": ["-y", "aria-mcp"]
+    }
+  ]
+}
+```
+
+Everything is customizable - add, remove, or modify any section to match your needs.
