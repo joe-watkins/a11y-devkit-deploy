@@ -1,6 +1,8 @@
 # A11y Devkit Deploy
 
-A cross-platform CLI for deploying accessibility skills and MCP servers across Claude Code, Cursor, Codex, and VSCode.
+A **fully config-driven**, cross-platform CLI for deploying accessibility skills and MCP servers across Claude Code, Cursor, Codex, and VSCode.
+
+**Add new skills or MCP servers without writing code** - just edit the JSON config and re-run.
 
 ## Install
 
@@ -61,17 +63,23 @@ All MCP servers are configured to run via `npx`, which means:
 
 This CLI automates the setup of accessibility tooling by:
 
-1. **Installing skills from npm** - Downloads and installs 7 accessibility skill packages
-2. **Configuring MCP servers** - Updates each IDE's MCP config to enable 5 accessibility-focused MCP servers:
-   - **wcag** - WCAG 2.2 guidelines, success criteria, and techniques
-   - **aria** - WAI-ARIA roles, states, properties, and patterns
-   - **magentaa11y** - Component accessibility acceptance criteria
-   - **a11y-personas** - Accessibility personas for diverse user needs
-   - **arc-issues** - Format AxeCore violations into standardized issue templates
+1. **Installing skills from npm** - Downloads and installs accessibility skill packages (configurable in `config/a11y.json`)
+2. **Configuring MCP servers** - Updates each IDE's MCP config to enable accessibility-focused MCP servers (also configurable)
 
-### Skills Installed
+**Default configuration includes:**
+   - **7 accessibility skills** - Testing, remediation, validation, documentation, and orchestration
+   - **5 MCP servers**:
+     - **wcag** - WCAG 2.2 guidelines, success criteria, and techniques
+     - **aria** - WAI-ARIA roles, states, properties, and patterns
+     - **magentaa11y** - Component accessibility acceptance criteria
+     - **a11y-personas** - Accessibility personas for diverse user needs
+     - **arc-issues** - Format AxeCore violations into standardized issue templates
 
-The following skill packages are installed from npm:
+**Fully customizable** - add/remove skills or MCP servers by editing the config file.
+
+### Skills Installed (Default)
+
+The following skill packages are installed from npm by default. **Add your own by editing `config/a11y.json`**:
 
 | Skill | Package | Description |
 |-------|---------|-------------|
@@ -110,11 +118,58 @@ The generated MCP config looks like this:
 
 ## Configuration
 
-Edit `config/a11y.json` to customize the deployment:
+The entire tool is **fully config-driven**. Edit `config/a11y.json` to customize everything without touching code:
 
-- `skills` - Array of npm package names to install as skills
+### Example: Adding a New Skill
+
+Simply add an object to the `skills` array with a `name` (npm package) and `description`:
+
+```json
+{
+  "skills": [
+    {
+      "name": "a11y-tester-skill",
+      "description": "Run accessibility tests"
+    },
+    {
+      "name": "your-custom-skill",
+      "description": "Your custom skill description"
+    }
+  ]
+}
+```
+
+### Example: Adding a New MCP Server
+
+Add an object to the `mcpServers` array with name, description, command, and args:
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "wcag",
+      "description": "WCAG guidelines reference",
+      "command": "npx",
+      "args": ["-y", "wcag-mcp"]
+    },
+    {
+      "name": "your-custom-mcp",
+      "description": "Your custom MCP server",
+      "command": "npx",
+      "args": ["-y", "your-mcp-package"]
+    }
+  ]
+}
+```
+
+### Config Structure
+
+- `skills` - Array of skill objects with `name` (npm package) and `description`
 - `ideSkillsPaths` - IDE-specific skills directories (configurable per IDE)
-- `mcpServers` - MCP server definitions using npx
+- `ideMcpPaths` - IDE-specific MCP config file paths
+- `mcpServers` - MCP server definitions with name, description, command, and args
+
+All changes take effect immediately - just re-run the CLI to deploy your updated config.
 
 ## Directory Structure
 
@@ -142,7 +197,9 @@ MCP configurations are written to each IDE's OS-specific config path:
 - **Windows**: `%APPDATA%\{IDE}\mcp.json`
 - **Linux**: `~/.config/{IDE}/mcp.json`
 
-## MCP Servers Included
+## MCP Servers Included (Default)
+
+**Add your own by editing `config/a11y.json`**:
 
 | Server | Package | Description |
 |--------|---------|-------------|
