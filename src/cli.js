@@ -27,7 +27,11 @@ function parseArgs(argv) {
   const args = new Set(argv.slice(2));
   return {
     autoYes: args.has("--yes") || args.has("-y"),
-    scope: args.has("--global") ? "global" : args.has("--local") ? "local" : null
+    scope: args.has("--global")
+      ? "global"
+      : args.has("--local")
+        ? "local"
+        : null,
   };
 }
 
@@ -46,14 +50,20 @@ async function run() {
   const idePaths = getIdePaths(projectRoot, platformInfo, config.ides);
   const args = parseArgs(process.argv);
 
-  header(`A11y Devkit Deploy v${pkg.version}`, "Install skills + MCP servers across IDEs");
+  header(
+    `A11y Devkit Deploy v${pkg.version}`,
+    "Install skills + MCP servers across IDEs",
+  );
   info(`Detected OS: ${formatOs(platformInfo)}`);
 
   console.log("\nSkills to install:");
   config.skills.forEach((skill) => {
     const name = typeof skill === "string" ? skill : skill.name;
-    const description = typeof skill === "string" ? "No description" : (skill.description || "No description");
-    console.log(`${name} - ${description}`);
+    const description =
+      typeof skill === "string"
+        ? "No description"
+        : skill.description || "No description";
+    console.log(`- ${name}: ${description}`);
   });
 
   console.log("\nMCP Servers to install:");
@@ -65,7 +75,7 @@ async function run() {
 
   const ideChoices = config.ides.map((ide) => ({
     title: ide.displayName,
-    value: ide.id
+    value: ide.id,
   }));
 
   let scope = args.scope;
@@ -81,10 +91,13 @@ async function run() {
           name: "scope",
           message: "Install skills + repo locally or globally?",
           choices: [
-            { title: `Local to this project (${formatPath(projectRoot)})`, value: "local" },
-            { title: "Global for this user", value: "global" }
+            {
+              title: `Local to this project (${formatPath(projectRoot)})`,
+              value: "local",
+            },
+            { title: "Global for this user", value: "global" },
           ],
-          initial: 0
+          initial: 0,
         },
         {
           type: "select",
@@ -94,22 +107,23 @@ async function run() {
             {
               title: `Local to this project (${formatPath(projectRoot)})`,
               value: "local",
-              description: "Write to project-level IDE config folders (version-controllable)"
+              description:
+                "Write to project-level IDE config folders (version-controllable)",
             },
             {
               title: "Global for this user",
               value: "global",
-              description: "Write to user-level IDE config folders"
-            }
+              description: "Write to user-level IDE config folders",
+            },
           ],
-          initial: 0
+          initial: 0,
         },
         {
           type: "multiselect",
           name: "ides",
           message: "Configure MCP for which IDEs?",
           choices: ideChoices,
-          initial: ideChoices.map((_, index) => index)
+          initial: ideChoices.map((_, index) => index),
         },
         {
           type: "toggle",
@@ -117,15 +131,15 @@ async function run() {
           message: "Install skills into IDE skills folders?",
           active: "yes",
           inactive: "no",
-          initial: true
-        }
+          initial: true,
+        },
       ],
       {
         onCancel: () => {
           warn("Setup cancelled.");
           process.exit(0);
-        }
-      }
+        },
+      },
     );
 
     scope = scope || response.scope;
@@ -156,13 +170,24 @@ async function run() {
     const skillsSpinner = startSpinner("Installing skills from npm...");
 
     try {
-      const skillTargets = scope === "local"
-        ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
-        : ideSelection.map((ide) => idePaths[ide].skillsDir);
+      const skillTargets =
+        scope === "local"
+          ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
+          : ideSelection.map((ide) => idePaths[ide].skillsDir);
 
-      const skillNames = config.skills.map((skill) => typeof skill === "string" ? skill : skill.name);
-      const result = await installSkillsFromNpm(skillNames, skillTargets, tempDir, config.skillsFolder, config.readmeTemplate);
-      skillsSpinner.succeed(`${result.installed} skills installed to ${skillTargets.length} IDE location(s).`);
+      const skillNames = config.skills.map((skill) =>
+        typeof skill === "string" ? skill : skill.name,
+      );
+      const result = await installSkillsFromNpm(
+        skillNames,
+        skillTargets,
+        tempDir,
+        config.skillsFolder,
+        config.readmeTemplate,
+      );
+      skillsSpinner.succeed(
+        `${result.installed} skills installed to ${skillTargets.length} IDE location(s).`,
+      );
     } catch (error) {
       skillsSpinner.fail(`Failed to install skills: ${error.message}`);
     }
@@ -172,19 +197,22 @@ async function run() {
 
   // Configure MCP servers using npx (no local installation needed!)
   const mcpSpinner = startSpinner("Updating MCP configurations...");
-  const mcpConfigPaths = mcpScope === "local"
-    ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
-    : ideSelection.map((ide) => idePaths[ide].mcpConfig);
+  const mcpConfigPaths =
+    mcpScope === "local"
+      ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
+      : ideSelection.map((ide) => idePaths[ide].mcpConfig);
 
   for (let i = 0; i < ideSelection.length; i++) {
     const ide = ideSelection[i];
     await installMcpConfig(
       mcpConfigPaths[i],
       config.mcpServers,
-      idePaths[ide].mcpServerKey
+      idePaths[ide].mcpServerKey,
     );
   }
-  mcpSpinner.succeed(`MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`);
+  mcpSpinner.succeed(
+    `MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`,
+  );
 
   // Clean up temporary directory
   const cleanupSpinner = startSpinner("Cleaning up temporary files...");
@@ -197,17 +225,18 @@ async function run() {
   console.log("");
   success("Next Steps:");
   const skillsFolderPath = config.skillsFolder ? `${config.skillsFolder}/` : "";
-  const skillsPath = scope === "local"
-    ? `.claude/skills/${skillsFolderPath}README.md (or your IDE's equivalent)`
-    : `~/.claude/skills/${skillsFolderPath}README.md (or your IDE's global skills directory)`;
+  const skillsPath =
+    scope === "local"
+      ? `.claude/skills/${skillsFolderPath}README.md (or your IDE's equivalent)`
+      : `~/.claude/skills/${skillsFolderPath}README.md (or your IDE's global skills directory)`;
   info(`📖 Check ${skillsPath} for comprehensive usage guide`);
   info("✨ Includes 70+ example prompts for all skills and MCP servers");
-  info("🚀 Start with the 'Getting Started' section for your first accessibility check");
+  info(
+    "🚀 Start with the 'Getting Started' section for your first accessibility check",
+  );
   console.log("");
   info("You can re-run this CLI any time to update skills and configs.");
   info("Documentation: https://github.com/joe-watkins/a11y-devkit#readme");
 }
 
-export {
-  run
-};
+export { run };
