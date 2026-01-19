@@ -116,5 +116,63 @@
       "command": "npx",
       "args": ["-y", "arc-issues-mcp"]
     }
+  ],
+  "profiles": [
+    {
+      "id": "developer",
+      "displayName": "Developer",
+      "description": "For developers building accessible applications",
+      "skills": ["a11y-base-web-skill"],
+      "mcpServers": ["magentaa11y"]
+    },
+    {
+      "id": "tester",
+      "displayName": "Tester/QA",
+      "description": "For QA engineers testing accessibility",
+      "skills": ["a11y-tester-skill"],
+      "mcpServers": ["arc-issues"]
+    },
+    {
+      "id": "a11y-sme",
+      "displayName": "Accessibility SME",
+      "description": "For accessibility subject matter experts",
+      "skills": ["web-standards-skill"],
+      "mcpServers": ["magentaa11y"]
+    },
+    {
+      "id": "product",
+      "displayName": "Product",
+      "description": "For product managers and owners",
+      "skills": ["a11y-base-web-skill"],
+      "mcpServers": ["magentaa11y"]
+    },
+    {
+      "id": "design",
+      "displayName": "Design",
+      "description": "For designers creating accessible experiences",
+      "skills": ["web-standards-skill"],
+      "mcpServers": ["aria"]
+    },
+    {
+      "id": "hybrid",
+      "displayName": "Hybrid (I want all the things)",
+      "description": "All skills and MCP servers for comprehensive accessibility support",
+      "skills": [
+        "a11y-base-web-skill",
+        "a11y-issue-writer-skill",
+        "a11y-tester-skill",
+        "a11y-remediator-skill",
+        "a11y-validator-skill",
+        "web-standards-skill",
+        "a11y-audit-fix-agent-orchestrator-skill"
+      ],
+      "mcpServers": [
+        "wcag",
+        "aria",
+        "magentaa11y",
+        "a11y-personas",
+        "arc-issues"
+      ]
+    }
   ]
 }
