@@ -30,47 +30,21 @@ function getAppSupportDir(platformInfo = getPlatform()) {
   return process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
 }
 
-function getIdePaths(projectRoot, platformInfo = getPlatform(), ideConfigs = []) {
+function getHostApplicationPaths(projectRoot, platformInfo = getPlatform(), hostConfigs = []) {
   const home = os.homedir();
-  const appSupport = getAppSupportDir(platformInfo);
   const paths = {};
 
-  for (const ide of ideConfigs) {
-    // Default paths (used for local scope, and global scope if no overrides)
-    let skillsFolder = ide.skillsFolder || `.${ide.id}/skills`;
-    let mcpConfigFile = ide.mcpConfigFile || `.${ide.id}/mcp.json`;
+  for (const host of hostConfigs) {
+    // Default paths for both local and global scope
+    const skillsFolder = host.skillsFolder || `.${host.id}/skills`;
+    const mcpConfigFile = host.mcpConfigFile || `.${host.id}/mcp.json`;
 
-    // Check for platform-specific global path overrides
-    let globalSkillsFolder = skillsFolder;
-    let globalMcpConfigFile = mcpConfigFile;
-
-    if (ide.globalPaths) {
-      const platformKey = platformInfo.isWindows ? 'Win' : platformInfo.isMac ? 'macOS' : null;
-
-      if (platformKey && ide.globalPaths[platformKey]) {
-        const globalOverrides = ide.globalPaths[platformKey];
-
-        // Use app support directory + override path for global
-        if (globalOverrides.skillsFolder) {
-          globalSkillsFolder = globalOverrides.skillsFolder;
-        }
-        if (globalOverrides.mcpConfigFile) {
-          globalMcpConfigFile = globalOverrides.mcpConfigFile;
-        }
-      }
-    }
-
-    // Determine base directory for global paths
-    const useAppSupport = ide.globalPaths &&
-      (platformInfo.isWindows || platformInfo.isMac);
-    const globalBase = useAppSupport ? appSupport : home;
-
-    paths[ide.id] = {
-      name: ide.displayName,
-      mcpConfig: path.join(globalBase, globalMcpConfigFile),
+    paths[host.id] = {
+      name: host.displayName,
+      mcpConfig: path.join(home, mcpConfigFile),
       localMcpConfig: path.join(projectRoot, mcpConfigFile),
-      mcpServerKey: ide.mcpServerKey,
-      skillsDir: path.join(globalBase, globalSkillsFolder),
+      mcpServerKey: host.mcpServerKey,
+      skillsDir: path.join(home, skillsFolder),
       localSkillsDir: path.join(projectRoot, skillsFolder)
     };
   }
@@ -90,7 +64,7 @@ function getMcpRepoDir(scope, projectRoot, platformInfo, mcpName) {
 export {
   getPlatform,
   getAppSupportDir,
-  getIdePaths,
+  getHostApplicationPaths,
   getTempDir,
   getMcpRepoDir
 };

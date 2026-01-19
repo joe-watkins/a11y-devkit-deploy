@@ -45,7 +45,7 @@
       "description": "Orchestrate accessibility audits"
     }
   ],
-  "ides": [
+  "hostApplications": [
     {
       "id": "claude",
       "displayName": "Claude Code",
@@ -72,17 +72,7 @@
       "displayName": "VSCode",
       "mcpServerKey": "servers",
       "skillsFolder": ".github/skills",
-      "mcpConfigFile": ".github/mcp.json",
-      "globalPaths": {
-        "Win": {
-          "mcpConfigFile": "Code/User/mcp.json",
-          "skillsFolder": "Code/User/.github/skills"
-        },
-        "macOS": {
-          "mcpConfigFile": "Code/User/mcp.json",
-          "skillsFolder": "Code/User/.github/skills"
-        }
-      }
+      "mcpConfigFile": ".github/mcp.json"
     },
     {
       "id": "windsurf",

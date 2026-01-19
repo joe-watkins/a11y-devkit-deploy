@@ -186,13 +186,13 @@ Add an object to the `mcpServers` array with name, description, command, and arg
 }
 ```
 
-### Adding a New IDE
+### Adding a New Host Application
 
-Add an object to the `ides` array with the IDE's configuration:
+Add an object to the `hostApplications` array with the host application's configuration:
 
 ```json
 {
-  "ides": [
+  "hostApplications": [
     {
       "id": "windsurf",
       "displayName": "Windsurf",
@@ -204,8 +204,8 @@ Add an object to the `ides` array with the IDE's configuration:
 }
 ```
 
-**IDE Configuration Properties:**
-- `id` - Unique identifier for the IDE
+**Host Application Configuration Properties:**
+- `id` - Unique identifier for the host application
 - `displayName` - Human-readable name shown in prompts
 - `mcpServerKey` - MCP config key name (`"servers"` or `"mcpServers"`)
 - `skillsFolder` - Path to skills directory (relative to home/project root)
@@ -216,7 +216,7 @@ Add an object to the `ides` array with the IDE's configuration:
 - `skillsFolder` - Subfolder name to bundle skills under (e.g., "a11y")
 - `readmeTemplate` - README template file to copy into skills directories
 - `skills` - Array of skill objects with `name` (npm package) and `description`
-- `ides` - Array of IDE configuration objects
+- `hostApplications` - Array of host application configuration objects
 - `mcpServers` - MCP server definitions with name, description, command, and args
 
 All changes take effect immediately - just re-run the CLI to deploy your updated config.
@@ -307,7 +307,7 @@ Here's what a complete `config/a11y.json` looks like:
       "description": "Run accessibility tests"
     }
   ],
-  "ides": [
+  "hostApplications": [
     {
       "id": "claude",
       "displayName": "Claude Code",

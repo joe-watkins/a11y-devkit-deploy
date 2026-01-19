@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import prompts from "prompts";
 
 import { header, info, warn, success, startSpinner, formatPath } from "./ui.js";
-import { getPlatform, getIdePaths, getTempDir, getMcpRepoDir } from "./paths.js";
+import { getPlatform, getHostApplicationPaths, getTempDir, getMcpRepoDir } from "./paths.js";
 import { installSkillsFromNpm, cleanupTemp } from "./installers/skills.js";
 import { installMcpConfig } from "./installers/mcp.js";
 import { getGitMcpPrompts, parseArgsString } from "./prompts/git-mcp.js";
@@ -50,20 +50,20 @@ async function run() {
   const platformInfo = getPlatform();
   const config = await loadConfig();
   const pkg = await loadPackageJson();
-  const idePaths = getIdePaths(projectRoot, platformInfo, config.ides);
+  const hostPaths = getHostApplicationPaths(projectRoot, platformInfo, config.hostApplications);
   const args = parseArgs(process.argv);
 
   header(
     `A11y Devkit Deploy v${pkg.version}`,
     args.gitMcp
       ? "Install MCP server from Git repository"
-      : "Install skills + MCP servers across IDEs",
+      : "Install skills + MCP servers across host applications",
   );
   info(`Detected OS: ${formatOs(platformInfo)}`);
 
   // Branch to Git MCP installation flow
   if (args.gitMcp) {
-    await runGitMcpInstallation(projectRoot, platformInfo, config, idePaths, args);
+    await runGitMcpInstallation(projectRoot, platformInfo, config, hostPaths, args);
     return;
   }
 
@@ -165,14 +165,14 @@ async function run() {
     }
   }
 
-  const ideChoices = config.ides.map((ide) => ({
-    title: ide.displayName,
-    value: ide.id,
+  const hostChoices = config.hostApplications.map((host) => ({
+    title: host.displayName,
+    value: host.id,
   }));
 
   let scope = args.scope;
   let mcpScope = null;
-  let ideSelection = config.ides.map((ide) => ide.id);
+  let hostSelection = config.hostApplications.map((host) => host.id);
 
   if (!args.autoYes) {
     const response = await prompts(
@@ -199,22 +199,22 @@ async function run() {
               title: `Local to this project (${formatPath(projectRoot)})`,
               value: "local",
               description:
-                "Write to project-level IDE config folders (version-controllable)",
+                "Write to project-level host application config folders (version-controllable)",
             },
             {
               title: "Global for this user",
               value: "global",
-              description: "Write to user-level IDE config folders",
+              description: "Write to user-level host application config folders",
             },
           ],
           initial: 0,
         },
         {
           type: "multiselect",
-          name: "ides",
-          message: "Configure for which IDEs?",
-          choices: ideChoices,
-          initial: ideChoices.map((_, index) => index),
+          name: "hosts",
+          message: "Configure for which host applications?",
+          choices: hostChoices,
+          initial: hostChoices.map((_, index) => index),
         },
       ],
       {
@@ -227,7 +227,7 @@ async function run() {
 
     scope = scope || response.scope;
     mcpScope = response.mcpScope || "local";
-    ideSelection = response.ides || ideSelection;
+    hostSelection = response.hosts || hostSelection;
   }
 
   if (!scope) {
@@ -237,8 +237,8 @@ async function run() {
     mcpScope = "local";
   }
 
-  if (!ideSelection.length) {
-    warn("No IDEs selected. MCP installation requires at least one IDE.");
+  if (!hostSelection.length) {
+    warn("No host applications selected. MCP installation requires at least one host application.");
     process.exit(1);
   }
 
@@ -253,8 +253,8 @@ async function run() {
   try {
     const skillTargets =
       scope === "local"
-        ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
-        : ideSelection.map((ide) => idePaths[ide].skillsDir);
+        ? hostSelection.map((host) => hostPaths[host].localSkillsDir)
+        : hostSelection.map((host) => hostPaths[host].skillsDir);
 
     const skillNames = skillsToInstall.map((skill) =>
       typeof skill === "string" ? skill : skill.npmName,
@@ -267,7 +267,7 @@ async function run() {
       config.readmeTemplate,
     );
     skillsSpinner.succeed(
-      `${result.installed} skills installed to ${skillTargets.length} IDE location(s).`,
+      `${result.installed} skills installed to ${skillTargets.length} host application location(s).`,
     );
   } catch (error) {
     skillsSpinner.fail(`Failed to install skills: ${error.message}`);
@@ -277,19 +277,19 @@ async function run() {
   const mcpSpinner = startSpinner("Updating MCP configurations...");
   const mcpConfigPaths =
     mcpScope === "local"
-      ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
-      : ideSelection.map((ide) => idePaths[ide].mcpConfig);
+      ? hostSelection.map((host) => hostPaths[host].localMcpConfig)
+      : hostSelection.map((host) => hostPaths[host].mcpConfig);
 
-  for (let i = 0; i < ideSelection.length; i++) {
-    const ide = ideSelection[i];
+  for (let i = 0; i < hostSelection.length; i++) {
+    const host = hostSelection[i];
     await installMcpConfig(
       mcpConfigPaths[i],
       mcpServersToInstall,
-      idePaths[ide].mcpServerKey,
+      hostPaths[host].mcpServerKey,
     );
   }
   mcpSpinner.succeed(
-    `MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`,
+    `MCP configs updated for ${hostSelection.length} host application(s) (${mcpScope} scope).`,
   );
 
   // Clean up temporary directory
@@ -305,8 +305,8 @@ async function run() {
   const skillsFolderPath = config.skillsFolder ? `${config.skillsFolder}/` : "";
   const skillsPath =
     scope === "local"
-      ? `.claude/skills/${skillsFolderPath}README.md (or your IDE's equivalent)`
-      : `~/.claude/skills/${skillsFolderPath}README.md (or your IDE's global skills directory)`;
+      ? `.claude/skills/${skillsFolderPath}README.md (or your host application's equivalent)`
+      : `~/.claude/skills/${skillsFolderPath}README.md (or your host application's global skills directory)`;
   info(`📖 Check ${skillsPath} for comprehensive usage guide`);
   info("✨ Includes 70+ example prompts for all skills and MCP servers");
   info(
@@ -317,7 +317,7 @@ async function run() {
   info("Documentation: https://github.com/joe-watkins/a11y-devkit#readme");
 }
 
-async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths, args) {
+async function runGitMcpInstallation(projectRoot, platformInfo, config, hostPaths, args) {
   // Check if --yes flag is used with --git-mcp
   if (args.autoYes) {
     warn("--yes flag not supported for Git MCP installation");
@@ -397,19 +397,19 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths
     },
   );
 
-  // Prompt for IDE selection
-  const ideChoices = config.ides.map((ide) => ({
-    title: ide.displayName,
-    value: ide.id,
+  // Prompt for host application selection
+  const hostChoices = config.hostApplications.map((host) => ({
+    title: host.displayName,
+    value: host.id,
   }));
 
-  const ideResponse = await prompts(
+  const hostResponse = await prompts(
     {
       type: "multiselect",
-      name: "ides",
-      message: "Configure MCP for which IDEs?",
-      choices: ideChoices,
-      initial: ideChoices.map((_, index) => index),
+      name: "hosts",
+      message: "Configure MCP for which host applications?",
+      choices: hostChoices,
+      initial: hostChoices.map((_, index) => index),
     },
     {
       onCancel: () => {
@@ -419,10 +419,10 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths
     },
   );
 
-  const ideSelection = ideResponse.ides || [];
+  const hostSelection = hostResponse.hosts || [];
 
-  if (!ideSelection.length) {
-    warn("No IDEs selected. MCP installation requires at least one IDE.");
+  if (!hostSelection.length) {
+    warn("No host applications selected. MCP installation requires at least one host application.");
     process.exit(1);
   }
 
@@ -457,13 +457,13 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths
     process.exit(1);
   }
 
-  // Install MCP configurations to selected IDEs
+  // Install MCP configurations to selected host applications
   const mcpConfigSpinner = startSpinner("Updating MCP configurations...");
 
   const mcpConfigPaths =
     mcpScope === "local"
-      ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
-      : ideSelection.map((ide) => idePaths[ide].mcpConfig);
+      ? hostSelection.map((host) => hostPaths[host].localMcpConfig)
+      : hostSelection.map((host) => hostPaths[host].mcpConfig);
 
   // Construct the MCP server configuration with absolute path
   const mcpServerConfig = {
@@ -487,26 +487,26 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, idePaths
     delete mcpServerConfig.args;
   }
 
-  for (let i = 0; i < ideSelection.length; i++) {
-    const ide = ideSelection[i];
+  for (let i = 0; i < hostSelection.length; i++) {
+    const host = hostSelection[i];
     await installMcpConfig(
       mcpConfigPaths[i],
       [mcpServerConfig],
-      idePaths[ide].mcpServerKey,
+      hostPaths[host].mcpServerKey,
     );
   }
 
   mcpConfigSpinner.succeed(
-    `MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`,
+    `MCP configs updated for ${hostSelection.length} host application(s) (${mcpScope} scope).`,
   );
 
   // Display success message
   success("Git MCP installation complete!");
   info(`Repository location: ${mcpServer.repoPath}`);
-  info(`MCP server '${mcpServer.name}' configured in ${ideSelection.length} IDE(s)`);
+  info(`MCP server '${mcpServer.name}' configured in ${hostSelection.length} host application(s)`);
   console.log("");
   success("Next Steps:");
-  info("Restart your IDE to load the new MCP server");
+  info("Restart your host application to load the new MCP server");
   info(`Repository cloned to: ${mcpServer.repoPath}`);
   info("You can manually edit the MCP configuration files if needed");
 }
