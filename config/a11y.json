@@ -76,11 +76,11 @@
       "globalPaths": {
         "Win": {
           "mcpConfigFile": "Code/User/mcp.json",
-          "skillsFolder": "Code/User/skills"
+          "skillsFolder": "Code/User/.github/skills"
         },
         "macOS": {
           "mcpConfigFile": "Code/User/mcp.json",
-          "skillsFolder": "Code/User/skills"
+          "skillsFolder": "Code/User/.github/skills"
         }
       }
     },
