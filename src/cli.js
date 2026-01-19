@@ -183,7 +183,7 @@ async function run() {
           message: "Install skills locally or globally?",
           choices: [
             {
-              title: `Local to this project (${formatPath(projectRoot)})`,
+              title: `Local to this project (${formatPath(projectRoot)}) [recommended]`,
               value: "local",
             },
             { title: "Global for this user", value: "global" },
