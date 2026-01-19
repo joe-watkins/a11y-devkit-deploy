@@ -1,12 +1,33 @@
 {
   "skills": [
-    "a11y-base-web-skill",
-    "a11y-issue-writer-skill",
-    "a11y-tester-skill",
-    "a11y-remediator-skill",
-    "a11y-validator-skill",
-    "web-standards-skill",
-    "a11y-audit-fix-agent-orchestrator-skill"
+    {
+      "name": "a11y-base-web-skill",
+      "description": "Core accessibility testing utilities"
+    },
+    {
+      "name": "a11y-issue-writer-skill",
+      "description": "Document accessibility issues"
+    },
+    {
+      "name": "a11y-tester-skill",
+      "description": "Run accessibility tests"
+    },
+    {
+      "name": "a11y-remediator-skill",
+      "description": "Fix accessibility issues"
+    },
+    {
+      "name": "a11y-validator-skill",
+      "description": "Validate accessibility compliance"
+    },
+    {
+      "name": "web-standards-skill",
+      "description": "Web standards reference"
+    },
+    {
+      "name": "a11y-audit-fix-agent-orchestrator-skill",
+      "description": "Orchestrate accessibility audits"
+    }
   ],
   "ideSkillsPaths": {
     "claude": ".claude/skills",
@@ -24,6 +45,7 @@
   "mcpServers": [
     {
       "name": "wcag",
+      "description": "WCAG guidelines reference",
       "command": "npx",
       "args": [
         "-y",
@@ -32,6 +54,7 @@
     },
     {
       "name": "aria",
+      "description": "ARIA specification reference",
       "command": "npx",
       "args": [
         "-y",
@@ -40,6 +63,7 @@
     },
     {
       "name": "magentaa11y",
+      "description": "MagentaA11y accessibility acceptance criteria tool",
       "command": "npx",
       "args": [
         "-y",
@@ -48,6 +72,7 @@
     },
     {
       "name": "a11y-personas",
+      "description": "Accessibility personas and user scenarios",
       "command": "npx",
       "args": [
         "-y",
@@ -56,6 +81,7 @@
     },
     {
       "name": "arc-issues",
+      "description": "Pre-formatted a11y issue templates",
       "command": "npx",
       "args": [
         "-y",

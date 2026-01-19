@@ -23,24 +23,6 @@ async function loadPackageJson() {
   return JSON.parse(raw);
 }
 
-const skillDescriptions = {
-  "a11y-base-web-skill": "Core accessibility testing utilities",
-  "a11y-issue-writer-skill": "Document accessibility issues",
-  "a11y-tester-skill": "Run accessibility tests",
-  "a11y-remediator-skill": "Fix accessibility issues",
-  "a11y-validator-skill": "Validate accessibility compliance",
-  "web-standards-skill": "Web standards reference",
-  "a11y-audit-fix-agent-orchestrator-skill": "Orchestrate accessibility audits"
-};
-
-const mcpDescriptions = {
-  "wcag": "WCAG guidelines reference",
-  "aria": "ARIA specification reference",
-  "magentaa11y": "MagentaA11y accessibility acceptance criteria tool",
-  "a11y-personas": "Accessibility personas and user scenarios",
-  "arc-issues": "Pre-formatted a11y issue templates"
-};
-
 function parseArgs(argv) {
   const args = new Set(argv.slice(2));
   return {
@@ -69,13 +51,14 @@ async function run() {
 
   console.log("\nSkills to install:");
   config.skills.forEach((skill) => {
-    const description = skillDescriptions[skill] || "No description";
-    console.log(`${skill} - ${description}`);
+    const name = typeof skill === "string" ? skill : skill.name;
+    const description = typeof skill === "string" ? "No description" : (skill.description || "No description");
+    console.log(`${name} - ${description}`);
   });
 
   console.log("\nMCP Servers to install:");
   config.mcpServers.forEach((server) => {
-    const description = mcpDescriptions[server.name] || "No description";
+    const description = server.description || "No description";
     console.log(`${server.name} - ${description}`);
   });
   console.log("");
@@ -179,7 +162,8 @@ async function run() {
         ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
         : ideSelection.map((ide) => idePaths[ide].skillsDir);
 
-      const result = await installSkillsFromNpm(config.skills, skillTargets, tempDir);
+      const skillNames = config.skills.map((skill) => typeof skill === "string" ? skill : skill.name);
+      const result = await installSkillsFromNpm(skillNames, skillTargets, tempDir);
       skillsSpinner.succeed(`${result.installed} skills installed to ${skillTargets.length} IDE location(s).`);
     } catch (error) {
       skillsSpinner.fail(`Failed to install skills: ${error.message}`);
