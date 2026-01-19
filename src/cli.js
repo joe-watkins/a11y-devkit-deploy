@@ -139,9 +139,7 @@ async function run() {
   }));
 
   let scope = args.scope;
-  let mcpScope = null;
   let ideSelection = config.ides.map((ide) => ide.id);
-  let installSkills = true;
 
   if (!args.autoYes) {
     const response = await prompts(
@@ -149,7 +147,7 @@ async function run() {
         {
           type: scope ? null : "select",
           name: "scope",
-          message: "Install skills + repo locally or globally?",
+          message: "Install skills + MCP configs locally or globally?",
           choices: [
             {
               title: `Local to this project (${formatPath(projectRoot)})`,
@@ -160,38 +158,11 @@ async function run() {
           initial: 0,
         },
         {
-          type: "select",
-          name: "mcpScope",
-          message: "Install MCP configs locally or globally?",
-          choices: [
-            {
-              title: `Local to this project (${formatPath(projectRoot)})`,
-              value: "local",
-              description:
-                "Write to project-level IDE config folders (version-controllable)",
-            },
-            {
-              title: "Global for this user",
-              value: "global",
-              description: "Write to user-level IDE config folders",
-            },
-          ],
-          initial: 0,
-        },
-        {
           type: "multiselect",
           name: "ides",
-          message: "Configure MCP for which IDEs?",
+          message: "Configure for which IDEs?",
           choices: ideChoices,
           initial: ideChoices.map((_, index) => index),
-        },
-        {
-          type: "toggle",
-          name: "installSkills",
-          message: "Install skills into IDE skills folders?",
-          active: "yes",
-          inactive: "no",
-          initial: true,
         },
       ],
       {
@@ -203,16 +174,11 @@ async function run() {
     );
 
     scope = scope || response.scope;
-    mcpScope = response.mcpScope || "local";
     ideSelection = response.ides || ideSelection;
-    installSkills = response.installSkills;
   }
 
   if (!scope) {
     scope = "local";
-  }
-  if (!mcpScope) {
-    mcpScope = "local";
   }
 
   if (!ideSelection.length) {
@@ -220,45 +186,40 @@ async function run() {
     process.exit(1);
   }
 
-  info(`Skills scope: ${scope === "local" ? "Local" : "Global"}`);
-  info(`MCP scope: ${mcpScope === "local" ? "Local" : "Global"}`);
+  info(`Installation scope: ${scope === "local" ? "Local" : "Global"}`);
 
   // Create temp directory for npm install
   const tempDir = path.join(getTempDir(), `.a11y-devkit-${Date.now()}`);
 
-  if (installSkills) {
-    const skillsSpinner = startSpinner("Installing skills from npm...");
+  const skillsSpinner = startSpinner("Installing skills from npm...");
 
-    try {
-      const skillTargets =
-        scope === "local"
-          ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
-          : ideSelection.map((ide) => idePaths[ide].skillsDir);
+  try {
+    const skillTargets =
+      scope === "local"
+        ? ideSelection.map((ide) => idePaths[ide].localSkillsDir)
+        : ideSelection.map((ide) => idePaths[ide].skillsDir);
 
-      const skillNames = skillsToInstall.map((skill) =>
-        typeof skill === "string" ? skill : skill.name,
-      );
-      const result = await installSkillsFromNpm(
-        skillNames,
-        skillTargets,
-        tempDir,
-        config.skillsFolder,
-        config.readmeTemplate,
-      );
-      skillsSpinner.succeed(
-        `${result.installed} skills installed to ${skillTargets.length} IDE location(s).`,
-      );
-    } catch (error) {
-      skillsSpinner.fail(`Failed to install skills: ${error.message}`);
-    }
-  } else {
-    warn("Skipping skills install to IDE folders.");
+    const skillNames = skillsToInstall.map((skill) =>
+      typeof skill === "string" ? skill : skill.name,
+    );
+    const result = await installSkillsFromNpm(
+      skillNames,
+      skillTargets,
+      tempDir,
+      config.skillsFolder,
+      config.readmeTemplate,
+    );
+    skillsSpinner.succeed(
+      `${result.installed} skills installed to ${skillTargets.length} IDE location(s).`,
+    );
+  } catch (error) {
+    skillsSpinner.fail(`Failed to install skills: ${error.message}`);
   }
 
   // Configure MCP servers using npx (no local installation needed!)
   const mcpSpinner = startSpinner("Updating MCP configurations...");
   const mcpConfigPaths =
-    mcpScope === "local"
+    scope === "local"
       ? ideSelection.map((ide) => idePaths[ide].localMcpConfig)
       : ideSelection.map((ide) => idePaths[ide].mcpConfig);
 
@@ -271,7 +232,7 @@ async function run() {
     );
   }
   mcpSpinner.succeed(
-    `MCP configs updated for ${ideSelection.length} IDE(s) (${mcpScope} scope).`,
+    `MCP configs updated for ${ideSelection.length} IDE(s) (${scope} scope).`,
   );
 
   // Clean up temporary directory
