@@ -6,7 +6,7 @@
   "type": "module",
   "main": "src/cli.js",
   "bin": {
-    "a11y-devkit-deploy": "bin/a11y-skills.js"
+    "a11y-devkit-deploy": "bin/a11y-devkit.js"
   },
   "files": [
     "bin",
@@ -39,7 +39,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node bin/a11y-skills.js"
+    "start": "node bin/a11y-devkit.js"
   },
   "dependencies": {
     "boxen": "^5.1.2",
