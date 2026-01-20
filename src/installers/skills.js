@@ -77,7 +77,7 @@ async function removeDirIfEmpty(targetDir) {
  * 4. Returns temp directory path for cleanup
  *
  * @param {string[]} skills - Array of npm package names
- * @param {string[]} targetDirs - Array of target directories to install skills to
+ * @param {Array<{path: string, shouldNest: boolean}>} targetConfigs - Array of target configs with path and nesting preference
  * @param {string} tempDir - Temporary directory for npm install
  * @param {string} skillsFolder - Optional subfolder name to bundle skills (e.g., "a11y")
  * @param {string} readmeTemplate - README template filename from templates folder
@@ -85,7 +85,7 @@ async function removeDirIfEmpty(targetDir) {
  */
 async function installSkillsFromNpm(
   skills,
-  targetDirs,
+  targetConfigs,
   tempDir,
   skillsFolder = null,
   readmeTemplate = "deploy-README.md",
@@ -117,9 +117,12 @@ async function installSkillsFromNpm(
   const nodeModulesDir = path.join(tempDir, "node_modules");
   let installedCount = 0;
 
-  for (const targetDir of targetDirs) {
+  for (const targetConfig of targetConfigs) {
+    const targetDir = targetConfig.path;
+    const shouldNest = targetConfig.shouldNest;
+
     // Determine the actual skills directory (with or without bundle folder)
-    const skillsDir = skillsFolder
+    const skillsDir = shouldNest && skillsFolder
       ? path.join(targetDir, skillsFolder)
       : targetDir;
 
@@ -156,7 +159,7 @@ async function installSkillsFromNpm(
   }
 
   return {
-    installed: installedCount / targetDirs.length,
+    installed: installedCount / targetConfigs.length,
     tempDir,
   };
 }
@@ -165,21 +168,24 @@ async function installSkillsFromNpm(
  * Remove skills installed by this tool from target directories.
  *
  * @param {string[]} skills - Array of npm package names
- * @param {string[]} targetDirs - Array of target directories to uninstall from
+ * @param {Array<{path: string, shouldNest: boolean}>} targetConfigs - Array of target configs with path and nesting preference
  * @param {string} skillsFolder - Optional subfolder name used for bundled skills
  * @param {string} readmeTemplate - README template filename from templates folder
  * @returns {Promise<{removed: number}>}
  */
 async function uninstallSkillsFromTargets(
   skills,
-  targetDirs,
+  targetConfigs,
   skillsFolder = null,
   readmeTemplate = "deploy-README.md",
 ) {
   let removedCount = 0;
 
-  for (const targetDir of targetDirs) {
-    const skillsDir = skillsFolder
+  for (const targetConfig of targetConfigs) {
+    const targetDir = targetConfig.path;
+    const shouldNest = targetConfig.shouldNest;
+
+    const skillsDir = shouldNest && skillsFolder
       ? path.join(targetDir, skillsFolder)
       : targetDir;
 
@@ -198,7 +204,7 @@ async function uninstallSkillsFromTargets(
       await fs.rm(readmePath, { force: true });
     }
 
-    if (skillsFolder) {
+    if (shouldNest && skillsFolder) {
       await removeDirIfEmpty(skillsDir);
     }
   }

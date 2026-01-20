@@ -36,30 +36,26 @@ function getHostApplicationPaths(projectRoot, platformInfo = getPlatform(), host
   const paths = {};
 
   for (const host of hostConfigs) {
-    // Default paths for local scope (relative to home or project)
+    // Default paths for global scope (relative to home)
     const skillsFolder = host.skillsFolder || `.${host.id}/skills`;
     const mcpConfigFile = host.mcpConfigFile || `.${host.id}/mcp.json`;
 
-    // MCP config: use AppData/Application Support if globalMcpConfigFile specified, otherwise home
+    // MCP config: use AppData/Application Support for config files
     // appSupport resolves to:
     //   - Windows: %APPDATA% (e.g., C:\Users\name\AppData\Roaming)
     //   - macOS: ~/Library/Application Support
     //   - Linux: $XDG_CONFIG_HOME or ~/.config
-    const globalMcpConfig = host.globalMcpConfigFile
-      ? path.join(appSupport, host.globalMcpConfigFile)
-      : path.join(home, mcpConfigFile);
+    const mcpConfig = path.join(appSupport, mcpConfigFile);
 
-    // Skills always use home directory (skills live at project level, not in AppData)
-    const globalSkillsDir = path.join(home, skillsFolder);
+    // Skills always use home directory
+    const skillsDir = path.join(home, skillsFolder);
 
     paths[host.id] = {
       name: host.displayName,
-      mcpConfig: globalMcpConfig,
-      localMcpConfig: path.join(projectRoot, mcpConfigFile),
+      mcpConfig: mcpConfig,
       mcpServerKey: host.mcpServerKey,
-      globalMcpServerKey: host.globalMcpServerKey || host.mcpServerKey,
-      skillsDir: globalSkillsDir,
-      localSkillsDir: path.join(projectRoot, skillsFolder)
+      skillsDir: skillsDir,
+      localSkillsDir: path.join(projectRoot, skillsFolder) // Still needed for skills scope
     };
   }
 

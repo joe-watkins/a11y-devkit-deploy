@@ -231,7 +231,6 @@ async function run() {
   }));
 
   let scope = args.scope;
-  let mcpScope = null;
   let hostSelection = config.hostApplications.map((host) => host.id);
 
   if (!args.autoYes) {
@@ -247,26 +246,6 @@ async function run() {
               value: "local",
             },
             { title: "Global for this user", value: "global" },
-          ],
-          initial: 0,
-        },
-        {
-          type: config.supportLocalMcpInstallation ? "select" : null,
-          name: "mcpScope",
-          message: "Install MCP configs locally or globally?",
-          choices: [
-            {
-              title: `Local to this project (${formatPath(projectRoot)})`,
-              value: "local",
-              description:
-                "Write to project-level host application config folders (version-controllable)",
-            },
-            {
-              title: "Global for this user",
-              value: "global",
-              description:
-                "Write to user-level host application config folders",
-            },
           ],
           initial: 0,
         },
@@ -287,17 +266,11 @@ async function run() {
     );
 
     scope = scope || response.scope;
-    mcpScope =
-      response.mcpScope ||
-      (config.supportLocalMcpInstallation ? "local" : "global");
     hostSelection = response.hosts || hostSelection;
   }
 
   if (!scope) {
     scope = "local";
-  }
-  if (!mcpScope) {
-    mcpScope = config.supportLocalMcpInstallation ? "local" : "global";
   }
 
   if (!hostSelection.length) {
@@ -308,7 +281,7 @@ async function run() {
   }
 
   info(`Skills scope: ${scope === "local" ? "Local" : "Global"}`);
-  info(`MCP scope: ${mcpScope === "local" ? "Local" : "Global"}`);
+  info("MCP configs: Global (user-level)");
 
   // Create temp directory for npm install
   const tempDir = path.join(getTempDir(), `.a11y-devkit-${Date.now()}`);
@@ -316,10 +289,17 @@ async function run() {
   const skillsSpinner = startSpinner("Installing skills from npm...");
 
   try {
-    const skillTargets =
-      scope === "local"
-        ? hostSelection.map((host) => hostPaths[host].localSkillsDir)
-        : hostSelection.map((host) => hostPaths[host].skillsDir);
+    const skillTargets = hostSelection.map((hostId) => {
+      const host = config.hostApplications.find((h) => h.id === hostId);
+      const targetPath =
+        scope === "local"
+          ? hostPaths[hostId].localSkillsDir
+          : hostPaths[hostId].skillsDir;
+      return {
+        path: targetPath,
+        shouldNest: host.nestSkillsFolder ?? true, // Default to true for backwards compatibility
+      };
+    });
 
     const skillNames = skillsToInstall.map((skill) =>
       typeof skill === "string" ? skill : skill.npmName,
@@ -340,16 +320,11 @@ async function run() {
 
   // Configure MCP servers using npx (no local installation needed!)
   const mcpSpinner = startSpinner("Updating MCP configurations...");
-  const mcpConfigPaths =
-    mcpScope === "local"
-      ? hostSelection.map((host) => hostPaths[host].localMcpConfig)
-      : hostSelection.map((host) => hostPaths[host].mcpConfig);
+  const mcpConfigPaths = hostSelection.map((host) => hostPaths[host].mcpConfig);
 
   for (let i = 0; i < hostSelection.length; i++) {
     const host = hostSelection[i];
-    const serverKey = mcpScope === "global"
-      ? hostPaths[host].globalMcpServerKey
-      : hostPaths[host].mcpServerKey;
+    const serverKey = hostPaths[host].mcpServerKey;
     await installMcpConfig(
       mcpConfigPaths[i],
       mcpServersToInstall,
@@ -358,7 +333,7 @@ async function run() {
     );
   }
   mcpSpinner.succeed(
-    `MCP configs updated for ${hostSelection.length} host application(s) (${mcpScope} scope).`,
+    `MCP configs updated for ${hostSelection.length} host application(s) (global scope).`,
   );
 
   // Clean up temporary directory
@@ -371,11 +346,15 @@ async function run() {
   info("MCP servers use npx - no local installation needed!");
   console.log("");
   success("Next Steps:");
-  const skillsFolderPath = config.skillsFolder ? `${config.skillsFolder}/` : "";
-  const skillsPath =
-    scope === "local"
-      ? `.claude/skills/${skillsFolderPath}README.md (or your host application's equivalent)`
-      : `~/.claude/skills/${skillsFolderPath}README.md (or your host application's global skills directory)`;
+  // Determine the README path based on the first selected host's nesting preference
+  const firstHost = config.hostApplications.find((h) => h.id === hostSelection[0]);
+  const firstHostSkillsPath = scope === "local"
+    ? hostPaths[hostSelection[0]].localSkillsDir
+    : hostPaths[hostSelection[0]].skillsDir;
+  const skillsFolderPath = (firstHost?.nestSkillsFolder ?? true) && config.skillsFolder
+    ? `${config.skillsFolder}/`
+    : "";
+  const skillsPath = `${firstHostSkillsPath}/${skillsFolderPath}a11y-devkit-README.md`;
   info(`📖 Check ${skillsPath} for comprehensive usage guide`);
   info("✨ Includes 70+ example prompts for all skills and MCP servers");
   info(
@@ -400,7 +379,6 @@ async function runUninstall(
   let removeSkills = true;
   let removeMcp = true;
   let scope = args.scope;
-  let mcpScope = null;
   let hostSelection = config.hostApplications.map((host) => host.id);
 
   if (!args.autoYes) {
@@ -457,29 +435,6 @@ async function runUninstall(
       });
     }
 
-    if (removeMcp && config.supportLocalMcpInstallation) {
-      questions.push({
-        type: "select",
-        name: "mcpScope",
-        message: "Remove MCP configs locally or globally?",
-        choices: [
-          {
-            title: `Local to this project (${formatPath(projectRoot)})`,
-            value: "local",
-            description:
-              "Remove from project-level host application config folders (version-controllable)",
-          },
-          {
-            title: "Global for this user",
-            value: "global",
-            description:
-              "Remove from user-level host application config folders",
-          },
-        ],
-        initial: 0,
-      });
-    }
-
     questions.push({
       type: "multiselect",
       name: "hosts",
@@ -496,16 +451,11 @@ async function runUninstall(
     });
 
     scope = scope || response.scope;
-    mcpScope = response.mcpScope || mcpScope;
     hostSelection = response.hosts || hostSelection;
   }
 
   if (removeSkills && !scope) {
     scope = "local";
-  }
-
-  if (removeMcp && !mcpScope) {
-    mcpScope = config.supportLocalMcpInstallation ? "local" : "global";
   }
 
   if (!hostSelection.length) {
@@ -519,16 +469,23 @@ async function runUninstall(
     info(`Skills scope: ${scope === "local" ? "Local" : "Global"}`);
   }
   if (removeMcp) {
-    info(`MCP scope: ${mcpScope === "local" ? "Local" : "Global"}`);
+    info("MCP configs: Global (user-level)");
   }
 
   if (removeSkills) {
     const skillsSpinner = startSpinner("Removing skills...");
     try {
-      const skillTargets =
-        scope === "local"
-          ? hostSelection.map((host) => hostPaths[host].localSkillsDir)
-          : hostSelection.map((host) => hostPaths[host].skillsDir);
+      const skillTargets = hostSelection.map((hostId) => {
+        const host = config.hostApplications.find((h) => h.id === hostId);
+        const targetPath =
+          scope === "local"
+            ? hostPaths[hostId].localSkillsDir
+            : hostPaths[hostId].skillsDir;
+        return {
+          path: targetPath,
+          shouldNest: host.nestSkillsFolder ?? true, // Default to true for backwards compatibility
+        };
+      });
 
       const skillNames = config.skills.map((skill) =>
         typeof skill === "string" ? skill : skill.npmName,
@@ -550,19 +507,14 @@ async function runUninstall(
 
   if (removeMcp) {
     const mcpSpinner = startSpinner("Removing MCP configurations...");
-    const mcpConfigPaths =
-      mcpScope === "local"
-        ? hostSelection.map((host) => hostPaths[host].localMcpConfig)
-        : hostSelection.map((host) => hostPaths[host].mcpConfig);
+    const mcpConfigPaths = hostSelection.map((host) => hostPaths[host].mcpConfig);
 
     let removedCount = 0;
     const serverNames = config.mcpServers.map((server) => server.name);
 
     for (let i = 0; i < hostSelection.length; i++) {
       const host = hostSelection[i];
-      const serverKey = mcpScope === "global"
-        ? hostPaths[host].globalMcpServerKey
-        : hostPaths[host].mcpServerKey;
+      const serverKey = hostPaths[host].mcpServerKey;
       const result = await removeMcpConfig(
         mcpConfigPaths[i],
         serverNames,
@@ -573,7 +525,7 @@ async function runUninstall(
 
     if (removedCount > 0) {
       mcpSpinner.succeed(
-        `Removed ${removedCount} MCP entries from ${hostSelection.length} host application(s) (${mcpScope} scope).`,
+        `Removed ${removedCount} MCP entries from ${hostSelection.length} host application(s) (global scope).`,
       );
     } else {
       mcpSpinner.succeed("No matching MCP entries found to remove.");
@@ -641,40 +593,6 @@ async function runGitMcpInstallation(
     },
   );
 
-  // Prompt for MCP Config Scope (where to write MCP configurations)
-  // Skip if local MCP installation is not supported
-  let mcpScopeResponse = {
-    mcpScope: config.supportLocalMcpInstallation ? null : "global",
-  };
-
-  if (config.supportLocalMcpInstallation) {
-    mcpScopeResponse = await prompts(
-      {
-        type: "select",
-        name: "mcpScope",
-        message: "Where to write MCP configurations?",
-        choices: [
-          {
-            title: `Local to this project (${formatPath(projectRoot)})`,
-            value: "local",
-            description: "Write to project-level IDE config folders",
-          },
-          {
-            title: "Global for this user",
-            value: "global",
-            description: "Write to user-level IDE config folders",
-          },
-        ],
-        initial: 0,
-      },
-      {
-        onCancel: () => {
-          warn("Git MCP installation cancelled.");
-          process.exit(0);
-        },
-      },
-    );
-  }
 
   // Prompt for host application selection
   const hostChoices = config.hostApplications.map((host) => ({
@@ -708,10 +626,9 @@ async function runGitMcpInstallation(
   }
 
   const repoScope = repoScopeResponse.repoScope;
-  const mcpScope = mcpScopeResponse.mcpScope;
 
   info(`Repository clone scope: ${repoScope === "local" ? "Local" : "Global"}`);
-  info(`MCP config scope: ${mcpScope === "local" ? "Local" : "Global"}`);
+  info("MCP configs: Global (user-level)");
 
   // Install Git MCP
   const gitSpinner = startSpinner("Cloning Git repository...");
@@ -741,10 +658,7 @@ async function runGitMcpInstallation(
   // Install MCP configurations to selected host applications
   const mcpConfigSpinner = startSpinner("Updating MCP configurations...");
 
-  const mcpConfigPaths =
-    mcpScope === "local"
-      ? hostSelection.map((host) => hostPaths[host].localMcpConfig)
-      : hostSelection.map((host) => hostPaths[host].mcpConfig);
+  const mcpConfigPaths = hostSelection.map((host) => hostPaths[host].mcpConfig);
 
   // Construct the MCP server configuration with absolute path
   const mcpServerConfig = {
@@ -770,9 +684,7 @@ async function runGitMcpInstallation(
 
   for (let i = 0; i < hostSelection.length; i++) {
     const host = hostSelection[i];
-    const serverKey = mcpScope === "global"
-      ? hostPaths[host].globalMcpServerKey
-      : hostPaths[host].mcpServerKey;
+    const serverKey = hostPaths[host].mcpServerKey;
     await installMcpConfig(
       mcpConfigPaths[i],
       [mcpServerConfig],
@@ -782,7 +694,7 @@ async function runGitMcpInstallation(
   }
 
   mcpConfigSpinner.succeed(
-    `MCP configs updated for ${hostSelection.length} host application(s) (${mcpScope} scope).`,
+    `MCP configs updated for ${hostSelection.length} host application(s) (global scope).`,
   );
 
   // Display success message

@@ -1,7 +1,6 @@
 {
   "skillsFolder": "a11y",
   "readmeTemplate": "deploy-README.md",
-  "supportLocalMcpInstallation": false,
   "skills": [
     {
       "name": "A11y Base Web Skill",
@@ -50,51 +49,50 @@
     {
       "id": "claude",
       "displayName": "Claude Code",
-      "mcpServerKey": "servers",
-      "globalMcpServerKey": "mcpServers",
+      "mcpServerKey": "mcpServers",
       "skillsFolder": ".claude/skills",
-      "mcpConfigFile": ".claude.json"
+      "mcpConfigFile": ".claude.json",
+      "nestSkillsFolder": false
     },
     {
       "id": "cursor",
       "displayName": "Cursor",
       "mcpServerKey": "mcpServers",
-      "globalMcpServerKey": "mcpServers",
       "skillsFolder": ".cursor/skills",
-      "mcpConfigFile": ".cursor/mcp.json"
+      "mcpConfigFile": ".cursor/mcp.json",
+      "nestSkillsFolder": true
     },
     {
       "id": "codex",
       "displayName": "Codex",
       "mcpServerKey": "mcp_servers",
-      "globalMcpServerKey": "mcp_servers",
       "skillsFolder": ".codex/skills",
-      "mcpConfigFile": ".codex/config.toml"
+      "mcpConfigFile": ".codex/config.toml",
+      "nestSkillsFolder": true
     },
     {
       "id": "vscode",
       "displayName": "VSCode",
       "mcpServerKey": "servers",
-      "globalMcpServerKey": "servers",
       "skillsFolder": ".github/skills",
-      "mcpConfigFile": ".github/mcp.json",
-      "globalMcpConfigFile": "Code/User/mcp.json"
+      "mcpConfigFile": "Code/User/mcp.json",
+      "nestSkillsFolder": true
     },
     {
       "id": "windsurf",
       "displayName": "Windsurf",
       "mcpServerKey": "servers",
-      "globalMcpServerKey": "servers",
       "skillsFolder": ".codeium/windsurf/skills",
-      "mcpConfigFile": ".codeium/windsurf/mcp_config.json"
+      "mcpConfigFile": ".codeium/windsurf/mcp_config.json",
+      "nestSkillsFolder": true
     },
     {
       "id": "factory",
       "displayName": "Factory",
       "mcpServerKey": "mcpServers",
-      "globalMcpServerKey": "mcpServers",
       "skillsFolder": ".factory/skills",
-      "mcpConfigFile": ".factory/mcp.json"
+      "mcpConfigFile": ".factory/mcp.json",
+      "nestSkillsFolder": true
     }
   ],
   "mcpServers": [

@@ -24,6 +24,8 @@ a11y-devkit-deploy
 - `--yes`: Use defaults (local scope, all IDEs, install skills).
 - `--uninstall`: Remove skills and MCP entries installed by this tool.
 
+**Note:** MCP configs are always written globally (AppData/Application Support). The scope flag only affects skills.
+
 ## After Installation
 
 Once installation completes, you'll find a comprehensive usage guide in your IDE's skills directory:
@@ -206,22 +208,18 @@ Add an object to the `hostApplications` array with the host application's config
       "displayName": "VSCode",
       "mcpServerKey": "servers",
       "skillsFolder": ".github/skills",
-      "mcpConfigFile": ".github/mcp.json",
-      "globalMcpConfigFile": "Code/User/mcp.json"
+      "mcpConfigFile": "Code/User/mcp.json"
     }
   ]
 }
 ```
-
-**Note:** The `globalMcpConfigFile` property is optional. When specified, the global MCP config path is relative to the platform's app support directory (AppData on Windows, Application Support on macOS) instead of the home directory.
 
 **Host Application Configuration Properties:**
 - `id` - Unique identifier for the host application
 - `displayName` - Human-readable name shown in prompts
 - `mcpServerKey` - MCP config key name (`"servers"`, `"mcpServers"`, or `"mcp_servers"` for TOML)
 - `skillsFolder` - Path to skills directory (relative to home/project root)
-- `mcpConfigFile` - Path to MCP config file (relative to home/project root). Supports both JSON (`.json`) and TOML (`.toml`) formats. TOML format is auto-detected by file extension (used by Codex).
-- `globalMcpConfigFile` - (Optional) Path to global MCP config relative to AppData/Application Support instead of home directory. Used for hosts like VSCode that store configs in platform-specific app directories:
+- `mcpConfigFile` - Path to MCP config file (relative to AppData/Application Support). Supports both JSON (`.json`) and TOML (`.toml`) formats. TOML format is auto-detected by file extension (used by Codex):
   - Windows: `%APPDATA%` (e.g., `C:\Users\name\AppData\Roaming`)
   - macOS: `~/Library/Application Support`
   - Linux: `$XDG_CONFIG_HOME` or `~/.config`
@@ -256,48 +254,43 @@ The CLI **safely merges** with existing configurations:
 ```
 your-project/
 ├── .claude/
-│   ├── mcp.json            # Claude Code MCP config
 │   └── skills/             # Claude Code skills
 ├── .cursor/
-│   ├── mcp.json            # Cursor MCP config
 │   └── skills/             # Cursor skills
 ├── .codex/
-│   ├── config.toml         # Codex MCP config
 │   └── skills/             # Codex skills
 ├── .github/
-│   ├── mcp.json            # VSCode MCP config
 │   └── skills/             # VSCode skills
 ├── .codeium/windsurf/
-│   ├── mcp_config.json     # Windsurf MCP config
 │   └── skills/             # Windsurf skills
 └── .factory/
-    ├── mcp.json            # Factory MCP config
     └── skills/             # Factory skills
 ```
 
 ### Global Install (User-Wide)
 ```
 ~/.claude/
-  ├── mcp.json              # Claude Code global MCP config
   └── skills/               # Claude Code global skills
 ~/.cursor/
-  ├── mcp.json              # Cursor global MCP config
   └── skills/               # Cursor global skills
 ~/.codex/
-  ├── config.toml           # Codex global MCP config
   └── skills/               # Codex global skills
 ~/.github/
   └── skills/               # VSCode global skills
 ~/.codeium/windsurf/
-  ├── mcp_config.json       # Windsurf global MCP config
   └── skills/               # Windsurf global skills
 ~/.factory/
-  ├── mcp.json              # Factory global MCP config
   └── skills/               # Factory global skills
 
-# VSCode MCP config lives in AppData/Application Support:
+# MCP config files live in AppData/Application Support:
+# Windows: %APPDATA%/.claude.json
+# Windows: %APPDATA%/.cursor/mcp.json
+# Windows: %APPDATA%/.codex/config.toml
 # Windows: %APPDATA%/Code/User/mcp.json
-# macOS:   ~/Library/Application Support/Code/User/mcp.json
+# Windows: %APPDATA%/.codeium/windsurf/mcp_config.json
+# Windows: %APPDATA%/.factory/mcp.json
+# macOS:   ~/Library/Application Support/<same paths as above>
+# Linux:   $XDG_CONFIG_HOME/<same paths as above> (or ~/.config)
 ```
 
 **Note:** Paths are fully customizable per IDE in `config/settings.json`
