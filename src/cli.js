@@ -354,6 +354,7 @@ async function run() {
       mcpConfigPaths[i],
       mcpServersToInstall,
       serverKey,
+      platformInfo,
     );
   }
   mcpSpinner.succeed(
@@ -776,6 +777,7 @@ async function runGitMcpInstallation(
       mcpConfigPaths[i],
       [mcpServerConfig],
       serverKey,
+      platformInfo,
     );
   }
 

@@ -143,7 +143,7 @@ async function loadConfig(filePath) {
   return isTomlFile(filePath) ? loadToml(filePath) : loadJson(filePath);
 }
 
-function mergeServers(existing, incoming, serverKey = "servers") {
+function mergeServers(existing, incoming, serverKey = "servers", platformInfo = null) {
   const existingServers = existing[serverKey] && typeof existing[serverKey] === "object"
     ? existing[serverKey]
     : {};
@@ -151,9 +151,18 @@ function mergeServers(existing, incoming, serverKey = "servers") {
   const merged = { ...existing, [serverKey]: { ...existingServers } };
 
   for (const server of incoming) {
+    let command = server.command;
+    let args = server.args || [];
+
+    // On Windows, wrap npx commands with cmd /c
+    if (platformInfo?.isWindows && command === "npx") {
+      command = "cmd";
+      args = ["/c", "npx", ...args];
+    }
+
     const serverConfig = {
-      command: server.command,
-      args: server.args || [],
+      command,
+      args,
       startup_timeout_sec: 30
     };
 
@@ -201,10 +210,10 @@ function removeServers(existing, removeNames, serverKey = "servers") {
   return { updated, removed };
 }
 
-async function installMcpConfig(configPath, servers, serverKey = "servers") {
+async function installMcpConfig(configPath, servers, serverKey = "servers", platformInfo = null) {
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   const existing = await loadConfig(configPath);
-  const updated = mergeServers(existing, servers, serverKey);
+  const updated = mergeServers(existing, servers, serverKey, platformInfo);
 
   if (isTomlFile(configPath)) {
     await fs.writeFile(configPath, stringifySimpleToml(updated), "utf8");
