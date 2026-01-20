@@ -143,7 +143,7 @@ async function loadConfig(filePath) {
   return isTomlFile(filePath) ? loadToml(filePath) : loadJson(filePath);
 }
 
-function mergeServers(existing, incoming, serverKey = "servers", platformInfo = null) {
+function mergeServers(existing, incoming, serverKey = "servers", platformInfo = null, isCodex = false) {
   const existingServers = existing[serverKey] && typeof existing[serverKey] === "object"
     ? existing[serverKey]
     : {};
@@ -162,9 +162,13 @@ function mergeServers(existing, incoming, serverKey = "servers", platformInfo = 
 
     const serverConfig = {
       command,
-      args,
-      startup_timeout_sec: 30
+      args
     };
+
+    // Only add startup_timeout_sec for Codex
+    if (isCodex) {
+      serverConfig.startup_timeout_sec = 30;
+    }
 
     // Include type if provided
     if (server.type) {
@@ -213,9 +217,11 @@ function removeServers(existing, removeNames, serverKey = "servers") {
 async function installMcpConfig(configPath, servers, serverKey = "servers", platformInfo = null) {
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   const existing = await loadConfig(configPath);
-  const updated = mergeServers(existing, servers, serverKey, platformInfo);
+  // Only add startup_timeout_sec for Codex (TOML files)
+  const isCodex = isTomlFile(configPath);
+  const updated = mergeServers(existing, servers, serverKey, platformInfo, isCodex);
 
-  if (isTomlFile(configPath)) {
+  if (isCodex) {
     await fs.writeFile(configPath, stringifySimpleToml(updated), "utf8");
   } else {
     await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
