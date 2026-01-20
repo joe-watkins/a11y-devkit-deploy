@@ -63,9 +63,9 @@
     {
       "id": "codex",
       "displayName": "Codex",
-      "mcpServerKey": "servers",
+      "mcpServerKey": "mcp_servers",
       "skillsFolder": ".codex/skills",
-      "mcpConfigFile": ".codex/mcp.json"
+      "mcpConfigFile": ".codex/config.toml"
     },
     {
       "id": "vscode",

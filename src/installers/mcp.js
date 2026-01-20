@@ -10,6 +10,10 @@ async function pathExists(target) {
   }
 }
 
+function isTomlFile(filePath) {
+  return filePath.endsWith('.toml');
+}
+
 async function loadJson(filePath) {
   if (!(await pathExists(filePath))) {
     return {};
@@ -23,6 +27,120 @@ async function loadJson(filePath) {
     await fs.copyFile(filePath, backupPath);
     return {};
   }
+}
+
+// Simple TOML parser for MCP server configs
+function parseSimpleToml(content) {
+  const result = {};
+  const lines = content.split('\n');
+  let currentSection = null;
+  let currentTable = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    // Parse table headers like [mcp_servers.name]
+    const tableMatch = trimmed.match(/^\[([^\]]+)\]$/);
+    if (tableMatch) {
+      const parts = tableMatch[1].split('.');
+      if (parts.length === 2) {
+        const [section, table] = parts;
+        if (!result[section]) result[section] = {};
+        if (!result[section][table]) result[section][table] = {};
+        currentSection = section;
+        currentTable = table;
+      }
+      continue;
+    }
+
+    // Parse key-value pairs
+    const kvMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+    if (kvMatch && currentSection && currentTable) {
+      const [, key, value] = kvMatch;
+
+      // Parse arrays like ["a", "b"]
+      if (value.startsWith('[')) {
+        const arrayMatch = value.match(/\[(.*)\]/);
+        if (arrayMatch) {
+          const items = arrayMatch[1].split(',').map(item => {
+            const trimmedItem = item.trim();
+            // Remove quotes
+            if (trimmedItem.startsWith('"') && trimmedItem.endsWith('"')) {
+              return trimmedItem.slice(1, -1);
+            }
+            return trimmedItem;
+          });
+          result[currentSection][currentTable][key] = items;
+        }
+      }
+      // Parse strings
+      else if (value.startsWith('"') && value.endsWith('"')) {
+        result[currentSection][currentTable][key] = value.slice(1, -1);
+      }
+      // Parse other values
+      else {
+        result[currentSection][currentTable][key] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
+// Simple TOML stringifier for MCP server configs
+function stringifySimpleToml(obj) {
+  const lines = [];
+
+  for (const [section, tables] of Object.entries(obj)) {
+    if (typeof tables !== 'object' || tables === null) continue;
+
+    for (const [tableName, config] of Object.entries(tables)) {
+      if (typeof config !== 'object' || config === null) continue;
+
+      // Write table header [section.tableName]
+      lines.push(`[${section}.${tableName}]`);
+
+      // Write key-value pairs
+      for (const [key, value] of Object.entries(config)) {
+        if (Array.isArray(value)) {
+          // Format arrays
+          const arrayStr = value.map(v => `"${v}"`).join(', ');
+          lines.push(`${key} = [${arrayStr}]`);
+        } else if (typeof value === 'string') {
+          lines.push(`${key} = "${value}"`);
+        } else {
+          lines.push(`${key} = ${value}`);
+        }
+      }
+
+      // Add blank line between tables
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
+}
+
+async function loadToml(filePath) {
+  if (!(await pathExists(filePath))) {
+    return {};
+  }
+
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return raw.trim() ? parseSimpleToml(raw) : {};
+  } catch (error) {
+    const backupPath = `${filePath}.bak`;
+    await fs.copyFile(filePath, backupPath);
+    return {};
+  }
+}
+
+async function loadConfig(filePath) {
+  return isTomlFile(filePath) ? loadToml(filePath) : loadJson(filePath);
 }
 
 function mergeServers(existing, incoming, serverKey = "servers") {
@@ -84,9 +202,14 @@ function removeServers(existing, removeNames, serverKey = "servers") {
 
 async function installMcpConfig(configPath, servers, serverKey = "servers") {
   await fs.mkdir(path.dirname(configPath), { recursive: true });
-  const existing = await loadJson(configPath);
+  const existing = await loadConfig(configPath);
   const updated = mergeServers(existing, servers, serverKey);
-  await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+
+  if (isTomlFile(configPath)) {
+    await fs.writeFile(configPath, stringifySimpleToml(updated), "utf8");
+  } else {
+    await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+  }
 }
 
 async function removeMcpConfig(configPath, serverNames, serverKey = "servers") {
@@ -94,14 +217,18 @@ async function removeMcpConfig(configPath, serverNames, serverKey = "servers") {
     return { removed: 0, changed: false };
   }
 
-  const existing = await loadJson(configPath);
+  const existing = await loadConfig(configPath);
   const { updated, removed } = removeServers(existing, serverNames, serverKey);
 
   if (removed === 0) {
     return { removed: 0, changed: false };
   }
 
-  await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+  if (isTomlFile(configPath)) {
+    await fs.writeFile(configPath, stringifySimpleToml(updated), "utf8");
+  } else {
+    await fs.writeFile(configPath, `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+  }
   return { removed, changed: true };
 }
 

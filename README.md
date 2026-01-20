@@ -218,13 +218,20 @@ Add an object to the `hostApplications` array with the host application's config
 **Host Application Configuration Properties:**
 - `id` - Unique identifier for the host application
 - `displayName` - Human-readable name shown in prompts
-- `mcpServerKey` - MCP config key name (`"servers"` or `"mcpServers"`)
+- `mcpServerKey` - MCP config key name (`"servers"`, `"mcpServers"`, or `"mcp_servers"` for TOML)
 - `skillsFolder` - Path to skills directory (relative to home/project root)
-- `mcpConfigFile` - Path to MCP config file (relative to home/project root)
+- `mcpConfigFile` - Path to MCP config file (relative to home/project root). Supports both JSON (`.json`) and TOML (`.toml`) formats. TOML format is auto-detected by file extension (used by Codex).
 - `globalMcpConfigFile` - (Optional) Path to global MCP config relative to AppData/Application Support instead of home directory. Used for hosts like VSCode that store configs in platform-specific app directories:
   - Windows: `%APPDATA%` (e.g., `C:\Users\name\AppData\Roaming`)
   - macOS: `~/Library/Application Support`
   - Linux: `$XDG_CONFIG_HOME` or `~/.config`
+
+**Note:** Codex uses TOML format for its MCP configuration (`~/.codex/config.toml`), which requires the `mcpServerKey` to be `"mcp_servers"` and generates config entries like:
+```toml
+[mcp_servers.magentaa11y]
+command = "npx"
+args = ["-y", "magentaa11y-mcp"]
+```
 
 ### Config Structure
 
@@ -255,7 +262,7 @@ your-project/
 │   ├── mcp.json            # Cursor MCP config
 │   └── skills/             # Cursor skills
 ├── .codex/
-│   ├── mcp.json            # Codex MCP config
+│   ├── config.toml         # Codex MCP config
 │   └── skills/             # Codex skills
 ├── .github/
 │   ├── mcp.json            # VSCode MCP config
@@ -277,7 +284,7 @@ your-project/
   ├── mcp.json              # Cursor global MCP config
   └── skills/               # Cursor global skills
 ~/.codex/
-  ├── mcp.json              # Codex global MCP config
+  ├── config.toml           # Codex global MCP config
   └── skills/               # Codex global skills
 ~/.github/
   └── skills/               # VSCode global skills
