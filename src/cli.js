@@ -34,7 +34,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function loadConfig() {
-  const configPath = path.join(__dirname, "..", "config", "a11y.json");
+  const configPath = path.join(__dirname, "..", "config", "settings.json");
   const raw = await fs.readFile(configPath, "utf8");
   return JSON.parse(raw);
 }
@@ -733,3 +733,4 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, hostPath
 }
 
 export { run };
+

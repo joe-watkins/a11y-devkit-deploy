@@ -64,7 +64,7 @@ All MCP servers are configured to run via `npx`, which means:
 
 This CLI automates the setup of accessibility tooling by:
 
-1. **Installing skills from npm** - Downloads and installs accessibility skill packages (configurable in `config/a11y.json`)
+1. **Installing skills from npm** - Downloads and installs accessibility skill packages (configurable in `config/settings.json`)
 2. **Configuring MCP servers** - Updates each IDE's MCP config to enable accessibility-focused MCP servers (also configurable)
 
 **Default configuration includes:**
@@ -80,7 +80,7 @@ This CLI automates the setup of accessibility tooling by:
 
 ## Why This Tool?
 
-**Zero Hardcoded Values** - Every aspect of the tool is driven by `config/a11y.json`:
+**Zero Hardcoded Values** - Every aspect of the tool is driven by `config/settings.json`:
 - IDE paths and configuration files
 - Skills to install
 - MCP servers to configure
@@ -104,7 +104,7 @@ This CLI automates the setup of accessibility tooling by:
 
 ### Skills Installed (Default)
 
-The following skill packages are installed from npm by default. **Add your own by editing `config/a11y.json`**:
+The following skill packages are installed from npm by default. **Add your own by editing `config/settings.json`**:
 
 | Skill | Package | Description |
 |-------|---------|-------------|
@@ -143,7 +143,7 @@ The generated MCP config looks like this:
 
 ## Configuration
 
-The entire tool is **fully config-driven**. Edit `config/a11y.json` to customize everything without touching code.
+The entire tool is **fully config-driven**. Edit `config/settings.json` to customize everything without touching code.
 
 ### Adding a New Skill
 
@@ -293,11 +293,11 @@ your-project/
 # macOS:   ~/Library/Application Support/Code/User/mcp.json
 ```
 
-**Note:** Paths are fully customizable per IDE in `config/a11y.json`
+**Note:** Paths are fully customizable per IDE in `config/settings.json`
 
 ## MCP Servers Included (Default)
 
-**Add your own by editing `config/a11y.json`**:
+**Add your own by editing `config/settings.json`**:
 
 | Server | Package | Description |
 |--------|---------|-------------|
@@ -309,7 +309,7 @@ your-project/
 
 ## Complete Config Example
 
-Here's what a complete `config/a11y.json` looks like:
+Here's what a complete `config/settings.json` looks like:
 
 ```json
 {
@@ -366,3 +366,4 @@ Here's what a complete `config/a11y.json` looks like:
 ```
 
 Everything is customizable - add, remove, or modify any section to match your needs.
+
