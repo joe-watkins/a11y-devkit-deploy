@@ -95,7 +95,7 @@
       "name": "wcag",
       "description": "WCAG guidelines reference",
       "command": "npx",
-      "args": ["-y", "wcag-mcp"]
+      "args": ["-y", "wcag-guidelines-mcp"]
     },
     {
       "name": "aria",

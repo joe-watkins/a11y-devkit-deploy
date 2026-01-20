@@ -153,7 +153,8 @@ function mergeServers(existing, incoming, serverKey = "servers") {
   for (const server of incoming) {
     const serverConfig = {
       command: server.command,
-      args: server.args || []
+      args: server.args || [],
+      startup_timeout_sec: 30
     };
 
     // Include type if provided
