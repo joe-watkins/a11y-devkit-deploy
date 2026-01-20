@@ -1,6 +1,7 @@
 {
   "skillsFolder": "a11y",
   "readmeTemplate": "deploy-README.md",
+  "supportLocalMcpInstallation": false,
   "skills": [
     {
       "name": "A11y Base Web Skill",

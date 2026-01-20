@@ -227,7 +227,7 @@ async function run() {
           initial: 0,
         },
         {
-          type: "select",
+          type: config.supportLocalMcpInstallation ? "select" : null,
           name: "mcpScope",
           message: "Install MCP configs locally or globally?",
           choices: [
@@ -262,7 +262,7 @@ async function run() {
     );
 
     scope = scope || response.scope;
-    mcpScope = response.mcpScope || "local";
+    mcpScope = response.mcpScope || (config.supportLocalMcpInstallation ? "local" : "global");
     hostSelection = response.hosts || hostSelection;
   }
 
@@ -270,7 +270,7 @@ async function run() {
     scope = "local";
   }
   if (!mcpScope) {
-    mcpScope = "local";
+    mcpScope = config.supportLocalMcpInstallation ? "local" : "global";
   }
 
   if (!hostSelection.length) {
@@ -418,7 +418,7 @@ async function runUninstall(projectRoot, platformInfo, config, hostPaths, args) 
       });
     }
 
-    if (removeMcp) {
+    if (removeMcp && config.supportLocalMcpInstallation) {
       questions.push({
         type: "select",
         name: "mcpScope",
@@ -465,7 +465,7 @@ async function runUninstall(projectRoot, platformInfo, config, hostPaths, args) 
   }
 
   if (removeMcp && !mcpScope) {
-    mcpScope = "local";
+    mcpScope = config.supportLocalMcpInstallation ? "local" : "global";
   }
 
   if (!hostSelection.length) {
@@ -591,32 +591,37 @@ async function runGitMcpInstallation(projectRoot, platformInfo, config, hostPath
   );
 
   // Prompt for MCP Config Scope (where to write MCP configurations)
-  const mcpScopeResponse = await prompts(
-    {
-      type: "select",
-      name: "mcpScope",
-      message: "Where to write MCP configurations?",
-      choices: [
-        {
-          title: `Local to this project (${formatPath(projectRoot)})`,
-          value: "local",
-          description: "Write to project-level IDE config folders",
-        },
-        {
-          title: "Global for this user",
-          value: "global",
-          description: "Write to user-level IDE config folders",
-        },
-      ],
-      initial: 0,
-    },
-    {
-      onCancel: () => {
-        warn("Git MCP installation cancelled.");
-        process.exit(0);
+  // Skip if local MCP installation is not supported
+  let mcpScopeResponse = { mcpScope: config.supportLocalMcpInstallation ? null : "global" };
+
+  if (config.supportLocalMcpInstallation) {
+    mcpScopeResponse = await prompts(
+      {
+        type: "select",
+        name: "mcpScope",
+        message: "Where to write MCP configurations?",
+        choices: [
+          {
+            title: `Local to this project (${formatPath(projectRoot)})`,
+            value: "local",
+            description: "Write to project-level IDE config folders",
+          },
+          {
+            title: "Global for this user",
+            value: "global",
+            description: "Write to user-level IDE config folders",
+          },
+        ],
+        initial: 0,
       },
-    },
-  );
+      {
+        onCancel: () => {
+          warn("Git MCP installation cancelled.");
+          process.exit(0);
+        },
+      },
+    );
+  }
 
   // Prompt for host application selection
   const hostChoices = config.hostApplications.map((host) => ({
